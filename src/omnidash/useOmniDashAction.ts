@@ -155,9 +155,13 @@ const SECRET_KEY_PATTERN = /^(secret|token|key|password|credential|private|beare
 function sanitizeBackendPayload(
   raw: Record<string, unknown>,
 ): Record<string, unknown> {
-  return Object.fromEntries(
-    Object.entries(raw).filter(([k]) => !SECRET_KEY_PATTERN.test(k)),
-  );
+  const res: Record<string, unknown> = {};
+  for (const k in raw) {
+    if (Object.prototype.hasOwnProperty.call(raw, k) && !SECRET_KEY_PATTERN.test(k)) {
+      res[k] = raw[k];
+    }
+  }
+  return res;
 }
 
 // ============================================================================

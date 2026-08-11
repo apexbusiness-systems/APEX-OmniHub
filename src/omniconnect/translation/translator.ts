@@ -174,8 +174,10 @@ export class SemanticTranslator {
     }
     if (typeof val === 'object' && val !== null) {
       const result: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(val)) {
-        result[k] = this.translateValue(v, targetLang);
+      for (const k in val) {
+        if (Object.prototype.hasOwnProperty.call(val, k)) {
+          result[k] = this.translateValue((val as Record<string, unknown>)[k], targetLang);
+        }
       }
       return result;
     }
@@ -192,8 +194,10 @@ export class SemanticTranslator {
     }
     if (typeof val === 'object' && val !== null) {
       const result: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(val)) {
-        result[k] = this.detranslateValue(v, targetLang);
+      for (const k in val) {
+        if (Object.prototype.hasOwnProperty.call(val, k)) {
+          result[k] = this.detranslateValue((val as Record<string, unknown>)[k], targetLang);
+        }
       }
       return result;
     }
@@ -243,14 +247,18 @@ export class SemanticTranslator {
 
       // 1. Forward Translate
       const translatedPayload: Record<string, unknown> = {};
-      for (const [key, val] of Object.entries(validEvent.payload)) {
-        translatedPayload[key] = this.translateValue(val, targetLocale);
+      for (const key in validEvent.payload) {
+        if (Object.prototype.hasOwnProperty.call(validEvent.payload, key)) {
+          translatedPayload[key] = this.translateValue(validEvent.payload[key], targetLocale);
+        }
       }
 
       // 2. Verification (Back Translate)
       const backTranslated: Record<string, unknown> = {};
-      for (const [key, val] of Object.entries(translatedPayload)) {
-        backTranslated[key] = this.detranslateValue(val, targetLocale);
+      for (const key in translatedPayload) {
+        if (Object.prototype.hasOwnProperty.call(translatedPayload, key)) {
+          backTranslated[key] = this.detranslateValue(translatedPayload[key], targetLocale);
+        }
       }
 
       // 3. Equivalence Check
