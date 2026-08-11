@@ -15,6 +15,9 @@ export class PolicyEngine {
   private readonly profiles = new Map<string, AppFilterProfile>();
   private readonly schemaValidator = new SchemaValidator();
 
+  // ⚡ Bolt: Cache compiled policy regexes to prevent recompilation on every event
+  private readonly regexCache = new Map<string, { allowRegex: RegExp | null, denyRegex: RegExp | null }>();
+
   async filter(
     events: CanonicalEvent[],
     appId: string,
@@ -29,9 +32,10 @@ export class PolicyEngine {
     if (import.meta.env.DEV) console.log(`[${correlationId}] Applying policy filter for app ${appId}, ${events.length} events`);
 
     const filteredEvents: CanonicalEvent[] = [];
+    const { allowRegex, denyRegex } = this.getRegexForProfile(profile);
 
     for (const event of events) {
-      if (this.shouldInclude(event, profile)) {
+      if (this.shouldInclude(event, profile, allowRegex, denyRegex)) {
         filteredEvents.push(this.transform(event, profile));
       }
     }
@@ -45,6 +49,25 @@ export class PolicyEngine {
 
   async setProfile(profile: AppFilterProfile): Promise<void> {
     this.profiles.set(profile.appId, profile);
+    this.regexCache.delete(profile.appId); // Invalidate cache on update
+  }
+
+  private getRegexForProfile(profile: AppFilterProfile): { allowRegex: RegExp | null, denyRegex: RegExp | null } {
+    if (this.regexCache.has(profile.appId)) {
+      return this.regexCache.get(profile.appId)!;
+    }
+
+    const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const denyRegex = profile.contentCategories.deny.length > 0
+      ? new RegExp(profile.contentCategories.deny.map(escapeRegex).join('|'), 'i')
+      : null;
+    const allowRegex = profile.contentCategories.allow.length > 0
+      ? new RegExp(profile.contentCategories.allow.map(escapeRegex).join('|'), 'i')
+      : null;
+
+    const cached = { allowRegex, denyRegex };
+    this.regexCache.set(profile.appId, cached);
+    return cached;
   }
 
   async validateEvent(event: CanonicalEvent, appId: string): Promise<ValidationResult> {
@@ -85,8 +108,12 @@ export class PolicyEngine {
 
     // 4. App Policy Profile Check
     const profile = await this.getProfile(appId);
-    if (profile && !this.shouldInclude(event, profile)) {
-      errors.push('Policy violation: Event denied by app profile configuration');
+    if (profile) {
+      const { allowRegex, denyRegex } = this.getRegexForProfile(profile);
+
+      if (!this.shouldInclude(event, profile, allowRegex, denyRegex)) {
+        errors.push('Policy violation: Event denied by app profile configuration');
+      }
     }
 
     if (errors.length > 0) {
@@ -100,19 +127,23 @@ export class PolicyEngine {
     };
   }
 
-  private shouldInclude(event: CanonicalEvent, profile: AppFilterProfile): boolean {
+  private shouldInclude(
+    event: CanonicalEvent,
+    profile: AppFilterProfile,
+    allowRegex: RegExp | null,
+    denyRegex: RegExp | null
+  ): boolean {
     if (!profile.allowedEventTypes.includes(event.eventType)) return false;
 
-    const { allow, deny } = profile.contentCategories;
-    const body = JSON.stringify({ p: event.payload, m: event.metadata }).toLowerCase();
-    const hasMatch = (list: string[]) => list.some(c => body.includes(c.toLowerCase()));
+    const body = JSON.stringify({ p: event.payload, m: event.metadata });
 
-    if (deny.length > 0 && hasMatch(deny)) return false;
+    // ⚡ Bolt: Single regex test replaces O(N*M) string inclusion loops
+    if (denyRegex && denyRegex.test(body)) return false;
     
     // Fail closed: if allow list is empty, we do not allow any payload that hasn't been explicitly allowed
-    if (allow.length === 0) return false;
+    if (!allowRegex) return false;
     
-    return hasMatch(allow);
+    return allowRegex.test(body);
   }
 
   // ⚡ Bolt: Define regex outside function scope so we only compile once
