@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -14,7 +14,8 @@ interface ConnectorKitProps {
   onConnect?: () => void;
 }
 
-export const ConnectorKit = ({ integration, onConnect }: ConnectorKitProps) => {
+// ⚡ Bolt: Wrapped ConnectorKit in React.memo() to prevent unnecessary re-renders when parent states change.
+export const ConnectorKit = memo(({ integration, onConnect }: ConnectorKitProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [generatedKey, setGeneratedKey] = useState<{ key: string; prefix: string } | null>(null);
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'passed' | 'failed'>('idle');
@@ -254,4 +255,4 @@ export const ConnectorKit = ({ integration, onConnect }: ConnectorKitProps) => {
       </CardContent>
     </Card>
   );
-};
+});
