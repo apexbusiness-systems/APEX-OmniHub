@@ -11,7 +11,7 @@
  * Props: { onComplete: (def: IntegrationDef) => void }
  * userId: resolved internally via supabase.auth.getSession()
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { type IntegrationDef } from '@/omniconnect/core/registry';
 import { createOmniLinkIntegration } from '@/omnidash/omnilink-api';
 import { supabase } from '@/integrations/supabase/client';
@@ -112,7 +112,8 @@ type IntegrationOnboarderProps = Readonly<{
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-export function IntegrationOnboarder({ onComplete }: IntegrationOnboarderProps) {
+// ⚡ Bolt: Wrapped IntegrationOnboarder in React.memo() to prevent unnecessary re-renders when parent states change.
+export const IntegrationOnboarder = memo(function IntegrationOnboarder({ onComplete }: IntegrationOnboarderProps) {
   const [step, setStep] = useState<'A' | 'B'>('A');
   const [appName, setAppName] = useState('');
   const [appUrl, setAppUrl] = useState('');
@@ -233,4 +234,4 @@ export function IntegrationOnboarder({ onComplete }: IntegrationOnboarderProps) 
       </div>
     </div>
   );
-}
+});
