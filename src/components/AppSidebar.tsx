@@ -7,15 +7,17 @@ import type { OmniModalConfig } from '../stores/omniModalStore';
  * All items dispatch module modals within OmniDash.
  * No route navigation — single page app architecture.
  */
+// ⚡ Bolt: Moved `navItems` array outside of the `AppSidebar` component to prevent unnecessary memory reallocation on every render.
+// Expected Impact: Reduces garbage collection overhead, particularly if the component re-renders frequently.
+const navItems = [
+  { title: 'Dashboard', moduleKey: 'dashboard', icon: LayoutDashboard, iconColor: 'text-orange-400', glowColor: 'from-orange-500/20 to-amber-500/10' },
+  { title: 'Links', moduleKey: 'links', icon: Image, iconColor: 'text-blue-400', glowColor: 'from-blue-500/20 to-indigo-500/10' },
+  { title: 'Files', moduleKey: 'files', icon: Folder, iconColor: 'text-blue-300', glowColor: 'from-blue-400/20 to-cyan-500/10' },
+  { title: 'Automations', moduleKey: 'automations', icon: Play, iconColor: 'text-indigo-400', glowColor: 'from-indigo-500/20 to-purple-500/10' },
+];
+
 export function AppSidebar() {
   const activeModuleKey = useOmniModal((s) => s.activeModal?.contextData?.moduleKey as string | undefined);
-
-  const navItems = [
-    { title: 'Dashboard', moduleKey: 'dashboard', icon: LayoutDashboard, iconColor: 'text-orange-400', glowColor: 'from-orange-500/20 to-amber-500/10' },
-    { title: 'Links', moduleKey: 'links', icon: Image, iconColor: 'text-blue-400', glowColor: 'from-blue-500/20 to-indigo-500/10' },
-    { title: 'Files', moduleKey: 'files', icon: Folder, iconColor: 'text-blue-300', glowColor: 'from-blue-400/20 to-cyan-500/10' },
-    { title: 'Automations', moduleKey: 'automations', icon: Play, iconColor: 'text-indigo-400', glowColor: 'from-indigo-500/20 to-purple-500/10' },
-  ];
 
   const openModule = (moduleKey: string, title: string) => {
     const config: OmniModalConfig = {
