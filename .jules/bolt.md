@@ -36,3 +36,10 @@ status: verified
 **Learning:** In the `deduplicateEntries` function, the initial string tokenization (`new Set(text.split(...))`) inside an O(N²) comparison loop via `unique.some()` caused N*M redundant array iterations and garbage collection allocations per loop for both the target and the comparison items. Furthermore, `new Set([...wordsA, ...wordsB])` created unnecessary intermediate array and Set allocations for the Jaccard union.
 **Action:** Extract tokenization into a cached array mapping (`uniqueSets`) and reuse them iteratively. Use `union = wordsA.size + wordsB.size - intersection` instead of the spread syntax to bypass object allocations and execute purely mathematically.
 ## 2026-07-11 - Replaced O(N) Array Searches with O(1) Sets in Validation\n**Learning:** Checking against Enum values using `Object.values(Enum).includes(...)` inside high-frequency validation functions like `validateCanonicalEvent` causes continuous array allocations and O(N) lookups.\n**Action:** Always pre-calculate a `new Set(Object.values(Enum))` outside the function scope and use `.has()` for O(1) validation.
+## 2026-07-30 - Replaced O(N) Array Searches with O(1) Pre-compiled RegExp in Route Validation
+**Learning:** Checking path strings against large configuration arrays using `.some()` and `.includes()` or `.startsWith()` allocates new objects and creates unnecessary `O(N)` CPU overhead inside high-frequency execution paths (e.g. guardrails, routing middleware).
+**Action:** When validating string sets statically, use `Array.map` to escape characters and `join('|')` them into a single pre-compiled `new RegExp()`. Use `regex.test(val)` for `O(1)` validation logic.
+
+## 2026-07-30 - Avoided Object.entries overhead in Routing
+**Learning:** Using `Object.entries(STATIC_DICT)` dynamically in high-frequency routing operations causes unnecessary array allocations and garbage collection pressure on every single route check.
+**Action:** Pre-calculate `const PRE_CALCULATED_ENTRIES = Object.entries(STATIC_DICT)` outside the function scope and iterate using a standard `for` loop to eliminate object allocations entirely.

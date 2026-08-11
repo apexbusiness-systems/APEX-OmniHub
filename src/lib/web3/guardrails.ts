@@ -59,20 +59,29 @@ export const PROTECTED_ENDPOINTS = [
   '/api/nft-holders',
 ] as const;
 
+// ⚡ Bolt: Pre-compile regex for O(1) matching instead of O(N) array iteration with .some()
+const PUBLIC_PATHS_REGEX = new RegExp(
+  PUBLIC_PATHS.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'),
+  'i'
+);
+
+const PROTECTED_ENDPOINTS_REGEX = new RegExp(
+  `^(${PROTECTED_ENDPOINTS.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`,
+  'i'
+);
+
 /**
  * Check if path is a public asset
  */
 export function isPublicPath(path: string): boolean {
-  const normalizedPath = path.toLowerCase();
-  return PUBLIC_PATHS.some((publicPath) => normalizedPath.includes(publicPath));
+  return PUBLIC_PATHS_REGEX.test(path);
 }
 
 /**
  * Check if endpoint requires wallet verification
  */
 export function requiresWalletVerification(path: string): boolean {
-  const normalizedPath = path.toLowerCase();
-  return PROTECTED_ENDPOINTS.some((endpoint) => normalizedPath.startsWith(endpoint));
+  return PROTECTED_ENDPOINTS_REGEX.test(path);
 }
 
 /**
