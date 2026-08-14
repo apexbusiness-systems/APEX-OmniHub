@@ -54,6 +54,11 @@ const SETTING_META: Record<string, { label: string; description: string }> = {
   },
 };
 
+// ⚡ Bolt: Pre-calculate Object keys and entries outside the render loop
+// to prevent array allocations and GC overhead on every render.
+const SETTING_KEYS = Object.keys(SETTING_META);
+const SETTING_ENTRIES = Object.entries(SETTING_META);
+
 const THEME_OPTIONS: { value: ThemeType; label: string; description: string }[] = [
   { value: 'light', label: 'Light', description: 'Light background' },
   { value: 'dark',  label: 'Dark',  description: 'Dark background' },
@@ -162,8 +167,8 @@ export default function SettingsModule({ onClose: _onClose }: Props) {
   }, []);
 
   const stateStyle = STATE_KIND_STYLES[state.stateKind] ?? DEFAULT_STATE_STYLE;
-  const total = Object.keys(SETTING_META).length;
-  const enabled = Object.keys(SETTING_META).filter(id => {
+  const total = SETTING_KEYS.length;
+  const enabled = SETTING_KEYS.filter(id => {
     const backendStatus = state.items.find(i => i.id === id)?.status ?? (SETTING_DEFAULTS[id] ? 'active' : 'inactive');
     return effectiveStatus(id, backendStatus);
   }).length;
@@ -251,7 +256,7 @@ export default function SettingsModule({ onClose: _onClose }: Props) {
         {state.stateKind === 'unavailable' && (
           <p className="text-xs text-muted-foreground">Settings unavailable — sign in with a paid account to manage platform settings.</p>
         )}
-        {Object.entries(SETTING_META).map(([itemId, meta]) => {
+        {SETTING_ENTRIES.map(([itemId, meta]) => {
           const backendStatus = state.items.find(i => i.id === itemId)?.status ?? (SETTING_DEFAULTS[itemId] ? 'active' : 'inactive');
           const isActive = effectiveStatus(itemId, backendStatus);
           const isSaving = saving === itemId;
