@@ -59,12 +59,20 @@ export const PROTECTED_ENDPOINTS = [
   '/api/nft-holders',
 ] as const;
 
+// ⚡ Bolt: Helper to safely escape strings for use in RegExp
+function escapeRegExp(string: string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// ⚡ Bolt: Pre-compiled RegExp lookup is O(1) compared to O(N) array search (.some + .includes).
+// Significantly improves performance as this is evaluated on the hot path for every request.
+const PUBLIC_PATHS_REGEX = new RegExp(PUBLIC_PATHS.map(escapeRegExp).join('|'), 'i');
+
 /**
  * Check if path is a public asset
  */
 export function isPublicPath(path: string): boolean {
-  const normalizedPath = path.toLowerCase();
-  return PUBLIC_PATHS.some((publicPath) => normalizedPath.includes(publicPath));
+  return PUBLIC_PATHS_REGEX.test(path);
 }
 
 /**
