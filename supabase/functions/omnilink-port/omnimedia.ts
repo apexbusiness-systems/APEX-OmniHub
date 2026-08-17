@@ -98,25 +98,41 @@ async function catalog(
   if (error) return json({ error: 'catalog_failed' }, 500, corsHeaders);
 
   const rows = (data ?? []) as AssetRow[];
-  const items = await Promise.all(rows.map(async (row) => {
-    let playbackUrl: string | null = row.external_url;
+
+  // Group paths by bucket for bulk signing to prevent N+1 queries
+  const pathsByBucket = new Map<string, string[]>();
+  for (const row of rows) {
     if (row.storage_path) {
-      // Signing succeeds only for objects the caller owns (storage RLS).
-      const { data: signed } = await client
-        .storage.from(row.bucket ?? BUCKET)
-        .createSignedUrl(row.storage_path, SIGNED_URL_TTL_SECONDS);
-      playbackUrl = signed?.signedUrl ?? null;
+      const bucket = row.bucket ?? BUCKET;
+      if (!pathsByBucket.has(bucket)) pathsByBucket.set(bucket, []);
+      pathsByBucket.get(bucket)!.push(row.storage_path);
     }
-    return {
-      id: row.id,
-      title: row.title,
-      kind: row.kind,
-      provider: row.provider,
-      mime_type: row.mime_type,
-      source: playbackUrl,
-      is_external: Boolean(row.external_url),
-      created_at: row.created_at,
-    };
+  }
+
+  // Fetch signed URLs in bulk per bucket
+  const signedUrlsMap = new Map<string, string>();
+  await Promise.all(
+    Array.from(pathsByBucket.entries()).map(async ([bucket, paths]) => {
+      const { data: signedUrls } = await client.storage.from(bucket).createSignedUrls(paths, SIGNED_URL_TTL_SECONDS);
+      if (signedUrls) {
+        for (const item of signedUrls) {
+          if (item.path && item.signedUrl) {
+            signedUrlsMap.set(item.path, item.signedUrl);
+          }
+        }
+      }
+    })
+  );
+
+  const items = rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    kind: row.kind,
+    provider: row.provider,
+    mime_type: row.mime_type,
+    source: row.storage_path ? (signedUrlsMap.get(row.storage_path) ?? null) : row.external_url,
+    is_external: Boolean(row.external_url),
+    created_at: row.created_at,
   }));
 
   return json({ items, expires_in: SIGNED_URL_TTL_SECONDS }, 200, corsHeaders);
