@@ -67,7 +67,8 @@ export const encodeAudioForAPI = (float32Array: Float32Array): string => {
   const chunkSize = 0x8000;
   for (let i = 0; i < uint8Array.length; i += chunkSize) {
     const chunk = uint8Array.subarray(i, i + chunkSize);
-    chunks.push(String.fromCodePoint(...chunk));
+    // @ts-ignore - apply is significantly faster than spread operator or Array.from
+    chunks.push(String.fromCharCode.apply(null, chunk));
   }
   return btoa(chunks.join(''));
 };
