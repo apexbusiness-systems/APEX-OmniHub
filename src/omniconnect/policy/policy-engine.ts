@@ -150,12 +150,14 @@ export class PolicyEngine {
 
   private walk(obj: Record<string, unknown>, check: (k: string) => boolean, apply: (o: Record<string, unknown>, k: string) => void): void {
     if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return;
-    Object.keys(obj).forEach(k => {
-      if (check(k)) {
-        apply(obj, k);
-      } else if (obj[k] && typeof obj[k] === 'object') {
-        this.walk(obj[k] as Record<string, unknown>, check, apply);
+    for (const k in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, k)) {
+        if (check(k)) {
+          apply(obj, k);
+        } else if (obj[k] && typeof obj[k] === 'object') {
+          this.walk(obj[k] as Record<string, unknown>, check, apply);
+        }
       }
-    });
+    }
   }
 }
