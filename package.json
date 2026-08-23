@@ -238,7 +238,7 @@
     "@lhci/cli": "^0.15.1",
     "@noble/hashes": "1.8.0",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
-    "@nomicfoundation/hardhat-ethers": "^3.0.8",
+    "@nomicfoundation/hardhat-ethers": "^4.0.14",
     "@nomicfoundation/hardhat-ignition": "^0.15.8",
     "@nomicfoundation/hardhat-ignition-ethers": "^0.15.8",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.12",
