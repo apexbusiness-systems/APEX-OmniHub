@@ -1,0 +1,8 @@
+{
+  "must_match": [
+    "build_image_major_version"
+  ],
+  "expected_values": {
+    "build_config.destination_dir": ""
+  }
+}

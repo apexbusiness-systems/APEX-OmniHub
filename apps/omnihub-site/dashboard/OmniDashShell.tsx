@@ -15,6 +15,7 @@ import { FooterObservabilityRow } from './components/FooterObservabilityRow';
 import { useOmniModal, type OmniModalConfig } from '@/stores/omniModalStore';
 import { useNotificationStore } from '../src/stores/notificationStore';
 import { invokeMcpIntent } from '@/omnihub-gateway/mcp-client';
+import { classifyMcpError } from './lib/classifyMcpError';
 import { OmniSpatialHost } from '@/dashboard/components/OmniSpatialHost';
 import { GlobalMediaDock } from '@/dashboard/components/media/GlobalMediaDock';
 import { OmniMediaLaunchWidget } from '@/dashboard/components/media/OmniMediaLaunchWidget';
@@ -974,6 +975,8 @@ const ContextDroplet = ({ app, onRemove }: { app: OmniContextApp, onRemove: () =
   );
 };
 
+
+
 const OmniSlateWidget = () => {
   const { tx } = useAppTranslation();
   const { demoMode } = useDemoMode();
@@ -1030,7 +1033,10 @@ const OmniSlateWidget = () => {
       }
     } catch (err) {
       console.error('[OmniSlateWidget] mcp-client invocation failed:', err);
-      setMessages(m => [...m, {role:"assistant", text:`[System Error]: Failed to contact APEX Agent. Guardian audit logged.`}]);
+      // PRCC-TASK1: Honest error gate — classify failure mode before surfacing to
+      // the user. No raw stack traces, no generic Guardian string. Each branch maps
+      // to a specific, actionable recovery step per the Honest Gateway Law.
+      setMessages(m => [...m, {role:"assistant", text: classifyMcpError(err)}]);
     } finally {
       setLoading(false);
     }
@@ -1382,28 +1388,85 @@ const EcosystemWidget = () => {
 // Ecosystem widget's "Add APEX App" → APEX_APPS_MODULE_KEY. The PR #1510
 // retired "Connections" split-panel duplicated both of those owners and must
 // not return (no split sub-panels, no connect CTA in this gallery).
-// "Awaiting" tiles are an honest, non-interactive empty state — no fabricated
-// connected state, no click-through. (User directive 2026-06-28.)
+// PRCC-TASK3: Gallery now reads apex_app_installs (status=user_confirmed) via
+// RLS-scoped Supabase query on mount. Demo mode stays ephemeral (no read).
+// Confirmed apps render as real tiles; remaining slots show honest AWAITING.
+interface AppInstallRow { app_id: string; app_label: string; status: string; }
+
+const GALLERY_MIN_SLOTS = 4;
+
 const IntegratedAppsGalleryWidget = () => {
   const { tx } = useAppTranslation();
+  const { demoMode } = useDemoMode();
+  const [installs, setInstalls] = useState<AppInstallRow[]>([]);
+
+  // Load user-confirmed installs on mount. Best-effort — failure stays silent
+  // and the gallery gracefully falls back to all-AWAITING placeholders.
+  useEffect(() => {
+    if (demoMode) return;
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase
+        .from('apex_app_installs')
+        .select('app_id, app_label, status')
+        .eq('status', 'user_confirmed')
+        .order('updated_at', { ascending: false })
+        .limit(GALLERY_MIN_SLOTS);
+      if (cancelled || error || !data) return;
+      setInstalls(data as AppInstallRow[]);
+    })();
+    return () => { cancelled = true; };
+  }, [demoMode]);
+
+  // Fill remaining slots with AWAITING placeholders (always show ≥4 slots)
+  const placeholderCount = Math.max(0, GALLERY_MIN_SLOTS - installs.length);
+
   return (
   <GlassCard style={{ padding: '16px' }}>
     <div style={{ marginBottom: 12 }}>
       {/* Canonical Layout Law: gallery label is a locked literal (check-omnidash-integrity) */}
       <SectionLabel>App Gallery</SectionLabel>
     </div>
-    {/* Four horizontal slots per canonical layout — same card shell as the
-        former metrics band. Honest, non-interactive "Awaiting" empty state. */}
     <div
       data-testid="integrated-apps"
       className="omni-grid-apps"
       style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12 }}
     >
-      {[1, 2, 3, 4].map(i => (
+      {/* Real confirmed APEX app tiles */}
+      {installs.map(app => (
+        <div
+          key={`apex-install-${app.app_id}`}
+          className="ose-integrated-apps-slot"
+          data-testid={`apex-app-tile-${app.app_id}`}
+          aria-label={`${app.app_label} — connected`}
+          style={{
+            background: 'rgba(34,197,94,0.07)',
+            border: '1px solid rgba(34,197,94,0.30)',
+            borderRadius: 12,
+            padding: '16px 14px',
+            display: 'flex', flexDirection: 'column', gap: 10,
+            alignItems: 'flex-start', minWidth: 0,
+          }}
+        >
+          <span style={{
+            width: 28, height: 28, borderRadius: 8,
+            background: 'rgba(34,197,94,0.14)',
+            border: '1px solid rgba(34,197,94,0.40)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, color: T.green, fontSize: 14,
+          }}>✓</span>
+          <span style={{ fontSize: 11, color: T.green, letterSpacing: '0.03em', fontWeight: 700,
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+            {app.app_label}
+          </span>
+        </div>
+      ))}
+      {/* AWAITING placeholders fill remaining slots */}
+      {Array.from({ length: placeholderCount }, (_, i) => (
         <div
           key={`integrated-app-ph-${i}`}
           className="ose-integrated-apps-slot"
-          aria-label={tx('dashboard.appGallery.awaitingSlot', { n: i })}
+          aria-label={tx('dashboard.appGallery.awaitingSlot', { n: installs.length + i + 1 })}
           style={{
             background: T.card,
             border: `1px solid ${T.border}`,

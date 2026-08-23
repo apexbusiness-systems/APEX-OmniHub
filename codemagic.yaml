@@ -1,0 +1,92 @@
+workflows:
+  ios-release:
+    name: iOS TestFlight Release
+    instance_type: mac_mini_m2
+    environment:
+      node: 22
+      xcode: latest
+    scripts:
+      - name: Install NPM Dependencies
+        script: npm ci
+      - name: Ensure dist-mobile exists
+        script: |
+          mkdir -p dist-mobile
+          cat <<EOF > dist-mobile/index.html
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+            <title>OmniLink</title>
+            <style>
+              body { margin: 0; padding: 0; background: #060d1a; display: flex; justify-content: center; align-items: center; height: 100vh; color: #fff; font-family: system-ui, sans-serif; }
+            </style>
+          </head>
+          <body>
+            <div>Loading OmniHub...</div>
+          </body>
+          </html>
+          EOF
+      - name: Capacitor Sync
+        script: npx cap sync ios
+      - name: Build iOS IPA
+        script: |
+          # The code signing relies on Codemagic's UI Apple Developer Portal integration.
+          # You must configure the code signing in the workflow settings.
+          xcode-project build-ipa \
+            --workspace "ios/App/App.xcworkspace" \
+            --scheme "App" \
+            --archive-flags="-destination 'generic/platform=iOS'"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - Internal
+
+  android-release:
+    name: Android Play Store Release
+    instance_type: mac_mini_m2
+    environment:
+      node: 22
+      java: 17
+    scripts:
+      - name: Install NPM Dependencies
+        script: npm ci
+      - name: Ensure dist-mobile exists
+        script: |
+          mkdir -p dist-mobile
+          cat <<EOF > dist-mobile/index.html
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+            <title>OmniLink</title>
+            <style>
+              body { margin: 0; padding: 0; background: #060d1a; display: flex; justify-content: center; align-items: center; height: 100vh; color: #fff; font-family: system-ui, sans-serif; }
+            </style>
+          </head>
+          <body>
+            <div>Loading OmniHub...</div>
+          </body>
+          </html>
+          EOF
+      - name: Capacitor Sync
+        script: npx cap sync android
+      - name: Build Android Release AAB
+        script: |
+          # Keystore must be configured in Codemagic environment variables
+          cd android
+          ./gradlew bundleRelease
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab
+    publishing:
+      google_play:
+        # Requires GCP Service Account JSON uploaded to Codemagic
+        credentials: $GCP_CREDENTIALS
+        track: internal
+        submit_as_draft: false

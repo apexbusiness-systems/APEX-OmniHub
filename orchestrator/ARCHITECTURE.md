@@ -158,14 +158,12 @@ saga = SagaContext()
 
 # Forward operations
 result1 = await saga.execute_with_compensation(
-    activity="reserve_inventory",
-    compensation_activity="release_inventory"
+    activity="reserve_inventory", compensation_activity="release_inventory"
 )
 # Stack: [release_inventory]
 
 result2 = await saga.execute_with_compensation(
-    activity="charge_payment",
-    compensation_activity="refund_payment"
+    activity="charge_payment", compensation_activity="refund_payment"
 )
 # Stack: [release_inventory, refund_payment]
 
@@ -197,11 +195,7 @@ except ActivityError as e:
 goal = "Book flight to Paris tomorrow and email confirmation to john@example.com"
 
 # Step 1: Entity extraction (regex/NER)
-entities = {
-    "LOCATION": ["Paris"],
-    "DATE": ["tomorrow"],
-    "EMAIL": ["john@example.com"]
-}
+entities = {"LOCATION": ["Paris"], "DATE": ["tomorrow"], "EMAIL": ["john@example.com"]}
 
 # Step 2: Template creation
 template = "Book flight to {LOCATION} {DATE} and email confirmation to {EMAIL}"
@@ -211,11 +205,10 @@ embedding = sentence_transformers.encode(template)
 # → [0.23, -0.45, 0.12, ..., 0.67]
 
 # Step 4: Store in Redis with vector index
-redis.hset("plan:abc123", {
-    "template_text": template,
-    "embedding": embedding.tobytes(),
-    "plan_steps": json.dumps([...])
-})
+redis.hset(
+    "plan:abc123",
+    {"template_text": template, "embedding": embedding.tobytes(), "plan_steps": json.dumps([...])},
+)
 ```
 
 **Vector Similarity Search:**
@@ -229,8 +222,7 @@ new_template = "Reserve airplane ticket to {LOCATION}"
 # Embed and search
 new_embedding = sentence_transformers.encode(new_template)
 results = redis.ft("idx:plan_templates").search(
-    Query("*=>[KNN 1 @embedding $vec]"),
-    query_params={"vec": new_embedding.tobytes()}
+    Query("*=>[KNN 1 @embedding $vec]"), query_params={"vec": new_embedding.tobytes()}
 )
 
 # Check similarity
@@ -254,6 +246,7 @@ if similarity >= 0.85:
 # Critical sections handled via Temporal's built-in workflow mutexes
 # No manual distributed locking required
 
+
 @workflow.defn(name="critical_flight_booking")
 class CriticalFlightBooking:
     @workflow.run
@@ -264,9 +257,7 @@ class CriticalFlightBooking:
 
         # Step 2: Perform booking (critical section)
         booking = await workflow.execute_activity(
-            "book_flight",
-            flight_id,
-            start_to_close_timeout=timedelta(seconds=30)
+            "book_flight", flight_id, start_to_close_timeout=timedelta(seconds=30)
         )
 
         return booking
@@ -280,7 +271,7 @@ class CriticalFlightBooking:
         try:
             await workflow.wait_condition(
                 lambda: self.is_flight_available(flight_id),
-                timeout=timedelta(seconds=300)  # 5 min timeout
+                timeout=timedelta(seconds=300),  # 5 min timeout
             )
         except asyncio.TimeoutError:
             raise ApplicationError("Flight booking timeout - try again")

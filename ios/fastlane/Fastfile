@@ -1,0 +1,21 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Push a new beta build to TestFlight"
+  lane :beta do
+    match(type: "appstore", readonly: true)
+    build_app(scheme: "App")
+    upload_to_testflight(skip_waiting_for_build_processing: true)
+  end
+
+  desc "Push a new release build to the App Store"
+  lane :release do
+    match(type: "appstore", readonly: true)
+    build_app(scheme: "App")
+    upload_to_app_store(
+      force: true,
+      automatic_release: false,
+      phased_release: true
+    )
+  end
+end

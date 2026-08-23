@@ -71,18 +71,22 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Setup Bun
+
+        uses: oven-sh/setup-bun@v2
+
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci --ignore-scripts; then
+            if bun install --frozen-lockfile; then
               break
             fi
             if [ "$attempt" -eq 3 ]; then
               exit 1
             fi
-            echo "npm ci failed on attempt $attempt; retrying after transient network backoff..."
-            if ! npm cache verify; then
-              echo "npm cache verify failed; continuing because npm ci retry is authoritative."
+            echo "bun install --frozen-lockfile failed on attempt $attempt; retrying after transient network backoff..."
+            if ! bun pm cache; then
+              echo "bun pm cache failed; continuing because bun install --frozen-lockfile retry is authoritative."
             fi
             sleep $((attempt * 20))
           done
@@ -132,18 +136,22 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@00854ea68c109d98c75d956347303bf7c45b0277 # v3.2.1
 
+      - name: Setup Bun
+
+        uses: oven-sh/setup-bun@v2
+
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci --ignore-scripts; then
+            if bun install --frozen-lockfile; then
               break
             fi
             if [ "$attempt" -eq 3 ]; then
               exit 1
             fi
-            echo "npm ci failed on attempt $attempt; retrying after transient network backoff..."
-            if ! npm cache verify; then
-              echo "npm cache verify failed; continuing because npm ci retry is authoritative."
+            echo "bun install --frozen-lockfile failed on attempt $attempt; retrying after transient network backoff..."
+            if ! bun pm cache; then
+              echo "bun pm cache failed; continuing because bun install --frozen-lockfile retry is authoritative."
             fi
             sleep $((attempt * 20))
           done
@@ -156,7 +164,9 @@ jobs:
           path: dist/
 
       - name: Sync Capacitor → Android
-        run: npm exec --no --ignore-scripts -- cap sync android
+        run: |
+          mv dist dist-mobile
+          npm exec --no --ignore-scripts -- cap sync android
 
       - name: Cache Gradle dependencies
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
@@ -216,18 +226,22 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Setup Bun
+
+        uses: oven-sh/setup-bun@v2
+
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci --ignore-scripts; then
+            if bun install --frozen-lockfile; then
               break
             fi
             if [ "$attempt" -eq 3 ]; then
               exit 1
             fi
-            echo "npm ci failed on attempt $attempt; retrying after transient network backoff..."
-            if ! npm cache verify; then
-              echo "npm cache verify failed; continuing because npm ci retry is authoritative."
+            echo "bun install --frozen-lockfile failed on attempt $attempt; retrying after transient network backoff..."
+            if ! bun pm cache; then
+              echo "bun pm cache failed; continuing because bun install --frozen-lockfile retry is authoritative."
             fi
             sleep $((attempt * 20))
           done
@@ -240,7 +254,9 @@ jobs:
           path: dist/
 
       - name: Sync Capacitor → iOS
-        run: npm exec --no --ignore-scripts -- cap sync ios
+        run: |
+          mv dist dist-mobile
+          npm exec --no --ignore-scripts -- cap sync ios
 
       - name: Select Xcode version
         run: |

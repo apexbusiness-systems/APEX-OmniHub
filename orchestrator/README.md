@@ -357,11 +357,11 @@ Workflow state is reconstructed by replaying events:
 
 ```python
 events = [
-  GoalReceived(goal="Book flight"),
-  PlanGenerated(steps=[...]),
-  ToolCallRequested(tool="search_flights"),
-  ToolResultReceived(result={...}),
-  WorkflowCompleted(final_result={...})
+    GoalReceived(goal="Book flight"),
+    PlanGenerated(steps=[...]),
+    ToolCallRequested(tool="search_flights"),
+    ToolResultReceived(result={...}),
+    WorkflowCompleted(final_result={...}),
 ]
 
 # Replay to reconstruct state

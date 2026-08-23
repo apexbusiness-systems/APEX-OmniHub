@@ -165,13 +165,7 @@ jobs:
           # working-tree files on checkout ("would be overwritten by checkout").
           # The fresh content is restored from "$workdir" after the switch.
           rm -f "${files[@]}"
-          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
-            git fetch origin "$branch"
-            git checkout -B "$branch" "origin/$branch"
-            git merge --no-edit "origin/${{ github.ref_name }}"
-          else
-            git checkout -b "$branch"
-          fi
+          git checkout -B "$branch" "origin/${{ github.ref_name }}"
           cp "$workdir"/* memory/omni-recall/docs/
           rm -rf "$workdir"
 
@@ -182,7 +176,7 @@ jobs:
           fi
           git add "${files[@]}"
           git commit -m "chore(arise): publish structural baseline snapshot and diagnosis report"
-          git push origin "HEAD:refs/heads/$branch"
+          git push origin "HEAD:refs/heads/$branch" --force
 
           existing_pr_url="$(gh pr list --state open --base "${{ github.ref_name }}" --head "$branch" --json url --jq '.[0].url // empty')"
           if [ -n "$existing_pr_url" ]; then

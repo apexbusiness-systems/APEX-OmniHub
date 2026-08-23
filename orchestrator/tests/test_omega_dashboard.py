@@ -97,7 +97,11 @@ class TestHandleReject:
         engine = MagicMock()
         handler = _make_handler(engine)
         handler._handle_reject(
-            {"request_id": "req-xyz789", "rejected_by": "carol", "reason": "policy"}
+            {
+                "request_id": "req-xyz789",
+                "rejected_by": "carol",
+                "reason": "policy",
+            }
         )
 
         body = _response_body(handler)
@@ -107,7 +111,11 @@ class TestHandleReject:
         engine = MagicMock()
         handler = _make_handler(engine)
         handler._handle_reject(
-            {"request_id": "req-xyz789", "rejected_by": "carol", "reason": "out of scope"}
+            {
+                "request_id": "req-xyz789",
+                "rejected_by": "carol",
+                "reason": "out of scope",
+            }
         )
 
         engine.reject_request.assert_called_once_with("req-xyz789", "carol", "out of scope")
