@@ -49,6 +49,11 @@ ignoreUntil = 2026-08-31
 reason = "Dev dependency brace-expansion in build/lint toolchain; not imported in production runtime bundles."
 
 [[IgnoredVulns]]
+id = "GHSA-mh99-v99m-4gvg"
+ignoreUntil = 2026-08-31
+reason = "Dev dependency brace-expansion in build/lint toolchain; not imported in production runtime bundles."
+
+[[IgnoredVulns]]
 id = "GHSA-73rr-hh4g-fpgx"
 ignoreUntil = 2026-08-31
 reason = "Dev dependency diff in hardhat/mocha test toolchain; not imported in production runtime bundles."
@@ -67,3 +72,8 @@ reason = "Dev dependency fast-uri; not imported in production runtime bundles."
 id = "GHSA-xvcm-6775-5m9r"
 ignoreUntil = 2026-08-31
 reason = "Dev dependency immutable; not imported in production runtime bundles."
+
+[[IgnoredVulns]]
+id = "GHSA-qwww-vcr4-c8h2"
+ignoreUntil = 2026-08-31
+reason = "React Router RSC Mode CSRF Bypass; APEX OmniHub is a Vite client SPA, RSC mode is not enabled or imported in production bundles."

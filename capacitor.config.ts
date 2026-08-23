@@ -1,12 +1,12 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.apexbusiness.omnilink',
+  appId: 'com.apexomnihub.web',
   appName: 'OmniLink',
-  webDir: 'dist',
+  webDir: 'dist-mobile',
   server: {
-    // For development: allow loading from local dev server
-    // In production, this should be removed or set to production URL
+    url: 'https://apexomnihub.icu',
+    cleartext: false,
     androidScheme: 'https',
     iosScheme: 'https',
   },
@@ -18,4 +18,3 @@ const config: CapacitorConfig = {
 };
 
 export default config;
-

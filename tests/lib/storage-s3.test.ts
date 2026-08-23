@@ -35,8 +35,8 @@ vi.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: vi.fn().mockResolvedValue('https://signed.example/object?sig=abc'),
 }))
 
-import { S3Storage } from '@/lib/storage/providers/s3'
-import { createStorage } from '@/lib/storage'
+import { S3Storage } from '../../src/lib/storage/providers/s3'
+import { createStorage } from '../../src/lib/storage'
 
 beforeEach(() => {
   send.mockReset()
@@ -117,7 +117,7 @@ describe('S3Storage file operations', () => {
     const res = await s.delete('avatars', 'u/p.jpg')
     expect(res.data).toBe(true)
     const cmd = send.mock.calls[0][0] as FakeCommand
-    expect(cmd.input.Key).toBe('u/p.jpg')
+    expect((cmd.input.Delete as any).Objects[0].Key).toBe('u/p.jpg')
   })
 
   it('createSignedUrl returns the presigned URL', async () => {

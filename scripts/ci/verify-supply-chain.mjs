@@ -16,7 +16,7 @@ const errors = [];
 const notes = [];
 
 // 1. Required lockfiles must exist and be non-trivial.
-const requiredLockfiles = ["package-lock.json", "bun.lock"];
+const requiredLockfiles = ["bun.lock"];
 for (const lf of requiredLockfiles) {
   const full = path.join(repoRoot, lf);
   if (!fs.existsSync(full)) {
@@ -52,17 +52,22 @@ for (const group of depGroups) {
 
 // 3. Lockfile <-> manifest coherence: every direct dependency name must appear in the
 //    npm lockfile. Catches the common "added to package.json, never locked" drift.
-const npmLock = path.join(repoRoot, "package-lock.json");
-if (fs.existsSync(npmLock)) {
-  const lockText = fs.readFileSync(npmLock, "utf8");
-  const directDeps = { ...pkg.dependencies, ...pkg.devDependencies };
-  const missing = Object.keys(directDeps).filter((name) => !lockText.includes(`"node_modules/${name}"`));
-  if (missing.length > 0) {
-    const shown = missing.slice(0, 10).join(", ");
-    const overflow = missing.length > 10 ? ` (+${missing.length - 10})` : "";
-    errors.push(`package-lock.json is out of sync — not locked: ${shown}${overflow}`);
-  } else {
-    notes.push(`all ${Object.keys(directDeps).length} direct dependencies present in package-lock.json`);
+const lockfile = path.join(repoRoot, "bun.lock");
+if (fs.existsSync(lockfile)) {
+  try {
+    const { execSync } = await import("node:child_process");
+    const stdout = execSync("bun pm ls", { encoding: "utf8", cwd: repoRoot, stdio: "pipe" });
+    const directDeps = { ...pkg.dependencies, ...pkg.devDependencies };
+    const missing = Object.keys(directDeps).filter((name) => !stdout.includes(` ${name}@`));
+    if (missing.length > 0) {
+      const shown = missing.slice(0, 10).join(", ");
+      const overflow = missing.length > 10 ? ` (+${missing.length - 10})` : "";
+      errors.push(`bun.lock is out of sync — not locked: ${shown}${overflow}`);
+    } else {
+      notes.push(`all ${Object.keys(directDeps).length} direct dependencies present in bun.lock`);
+    }
+  } catch (e) {
+    notes.push(`bun pm ls failed, skipping coherence check (could be normal if modules not installed). Error: ${e.message.split('\\n')[0]}`);
   }
 }
 

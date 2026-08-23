@@ -13,6 +13,8 @@ import { OmniTracePage } from "./pages/OmniTrace";
 import { EyesVisionPage } from "./pages/EyesVision";
 import { ManModePage } from "./pages/ManMode";
 import { SupportPage } from "./pages/Support";
+import { OmniLinkSupportPage } from "./pages/OmniLinkSupport";
+import { OmniLinkPrivacyPage } from "./pages/OmniLinkPrivacy";
 import { AdvancedAnalyticsPage } from "./pages/AdvancedAnalytics";
 import { AiAutomationPage } from "./pages/AiAutomation";
 import { FortressPage } from "./pages/Fortress";
@@ -40,6 +42,7 @@ const routes: RouteObject[] = [
   { path: "/", element: <HomePage /> },
   { path: "/login", element: <LoginPage /> },
   { path: "/privacy", element: <PrivacyPage /> },
+  { path: "/omnilink-privacy", element: <OmniLinkPrivacyPage /> },
   { path: "/terms", element: <TermsPage /> },
   { path: "/request-access", element: <RequestAccessPage /> },
   { path: "/story", element: <FounderStory /> },
@@ -50,6 +53,7 @@ const routes: RouteObject[] = [
   { path: "/features/man-mode", element: <ManModePage /> },
   { path: "/man-mode", element: <ManModePage /> },
   { path: "/support", element: <SupportPage /> },
+  { path: "/omnilink-support", element: <OmniLinkSupportPage /> },
   { path: "/advanced-analytics", element: <AdvancedAnalyticsPage /> },
   { path: "/ai-automation", element: <AiAutomationPage /> },
   { path: "/fortress", element: <FortressPage /> },

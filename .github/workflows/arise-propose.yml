@@ -35,7 +35,7 @@ jobs:
           node-version: "24"
 
       - name: Install root dependencies
-        run: npm ci --ignore-scripts
+        run: bun install --frozen-lockfile
         continue-on-error: true
 
       - name: Setup Bun
