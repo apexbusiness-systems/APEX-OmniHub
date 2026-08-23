@@ -21,7 +21,8 @@ import {
 // Hard ceiling for any orchestrator round-trip. Without this a hung connection
 // service leaves the wizard spinning forever; on timeout we surface an explicit
 // "timed out" error rather than faking progress or a successful connection.
-const OMNIBOARD_REQUEST_TIMEOUT_MS = 15000;
+// Contract: 10s max (PRCC-TASK2 — reduced from 15s for responsive UX gate).
+const OMNIBOARD_REQUEST_TIMEOUT_MS = 10_000;
 
 // OmniBoard routes ALL orchestrator calls through Supabase Edge Functions
 // (omnilink-port/omniboard-*) so they transit https://*.supabase.co — already
@@ -179,7 +180,7 @@ export function OmniBoardWizard({ onComplete }: WizardProps) {
           <p className="text-[11px] text-muted-foreground">Chat-native connector actions use the existing APEX agent and OmniConnect paths.</p>
         </div>
       </div>
-      {error && <p className="text-xs text-red-400">{error} <button onClick={startSession} className="underline ml-1">Retry</button></p>}
+      {error && <p data-testid="omniboard-error-state" className="text-xs text-red-400">{error} <button onClick={startSession} className="underline ml-1">Retry</button></p>}
       <div className="rounded-lg bg-muted/20 p-3 text-xs text-foreground leading-relaxed min-h-[60px]">
         {message}
       </div>

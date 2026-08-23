@@ -27,7 +27,12 @@ _VERIFIED_OK = json.dumps(
 ).encode()
 
 _VERIFIED_FAIL = json.dumps(
-    {"verified": False, "logicDelta": 0.9, "escalateToMan": True, "reason": "threshold exceeded"}
+    {
+        "verified": False,
+        "logicDelta": 0.9,
+        "escalateToMan": True,
+        "reason": "threshold exceeded",
+    }
 ).encode()
 
 

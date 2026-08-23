@@ -16,9 +16,10 @@
  *
  * OWNED BY: APEX Business Systems Ltd.
  */
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { LIVE_APEX_APPS } from '../../contracts/apexApps';
 import { resolveApexApp, type ApexApp } from './apexAppsResolve';
+import { supabase } from '@/lib/supabase';
 
 interface Props {
   readonly onClose: () => void;
@@ -48,12 +49,34 @@ export default function ApexAppsMcpModule({ onClose }: Props) {
 
   const handleConnect = () => {
     if (!resolved) return;
-    // Real, verifiable handoff: open the chosen app's OmniPort. No fake state.
+    // Real, verifiable handoff: open the chosen app's OmniPort in a new tab.
+    // This never navigates the current OmniHub tab away (_blank is enforced).
     if (typeof window !== 'undefined') {
       window.open(resolved.url, '_blank', 'noopener,noreferrer');
     }
     setStep('launched');
   };
+
+  // PRCC-TASK3: Write user-confirmed install state to apex_app_installs.
+  // Called only when the user explicitly clicks "It connected!" in the
+  // launched step. Never called for cancelled or skipped flows.
+  // Best-effort, non-blocking — a write failure must not block the user.
+  const confirmInstall = useCallback(async (app: ApexApp) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from('apex_app_installs').upsert(
+      {
+        user_id: user.id,
+        app_id: app.id,
+        app_label: app.label,
+        app_url: app.url,
+        status: 'user_confirmed',
+      },
+      { onConflict: 'user_id,app_id' },
+    ).then(({ error }: { error: { message: string } | null }) => {
+      if (error) console.error('[ApexAppsMcpModule] confirmInstall failed:', error.message);
+    });
+  }, []);
 
   const reset = () => {
     setPrompt('');
@@ -181,7 +204,7 @@ export default function ApexAppsMcpModule({ onClose }: Props) {
     );
   }
 
-  // ── Launched step (honest: opened, not "connected") ─────────────────────────
+  // ── Launched step (honest: shows confirmation gate, not a fake "connected" badge) ──
   return (
     <div className="flex flex-col gap-4" data-testid="apex-apps-mcp">
       <div
@@ -194,8 +217,8 @@ export default function ApexAppsMcpModule({ onClose }: Props) {
           Opened {resolved?.label}’s OmniPort
         </div>
         <p className="mt-2 text-[12px] text-muted-foreground">
-          {resolved?.label} opened in a new tab. Finish connecting and start
-          chatting there. If a tab didn’t open, use the direct link below.
+          {resolved?.label} opened in a new tab. Finish connecting there, then
+          confirm below so APEX OmniHub can reflect your connection.
         </p>
         {resolved && (
           <a
@@ -204,14 +227,19 @@ export default function ApexAppsMcpModule({ onClose }: Props) {
             rel="noopener noreferrer"
             className="mt-3 inline-block text-xs font-semibold text-primary underline"
           >
-            Open {resolved.label} ↗
+            Open {resolved.label} again ↗
           </a>
         )}
       </div>
 
+      {/* PRCC-TASK3: Confirmation gate — user tells OmniHub the connection worked.
+          "It connected!" → upserts apex_app_installs (status: user_confirmed)
+          → App Gallery can reflect real state on next load.
+          "Skip" → closes without writing — honest: connection state stays unknown. */}
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
         <button
           type="button"
+          data-testid="apex-apps-skip-confirm"
           onClick={reset}
           className="min-h-11 rounded-lg px-4 text-sm text-muted-foreground hover:text-foreground"
         >
@@ -219,10 +247,22 @@ export default function ApexAppsMcpModule({ onClose }: Props) {
         </button>
         <button
           type="button"
+          data-testid="apex-apps-skip-done"
           onClick={onClose}
-          className="min-h-11 rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:opacity-90"
+          className="min-h-11 rounded-lg px-4 text-sm text-muted-foreground hover:text-foreground border border-white/10"
         >
-          Done
+          Skip — I’ll confirm later
+        </button>
+        <button
+          type="button"
+          data-testid="apex-apps-confirm-connected"
+          onClick={async () => {
+            if (resolved) await confirmInstall(resolved);
+            onClose();
+          }}
+          className="min-h-11 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white hover:opacity-90"
+        >
+          It connected! ✔
         </button>
       </div>
     </div>

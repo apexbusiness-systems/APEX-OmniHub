@@ -139,36 +139,31 @@ jobs:
         uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
           node-version: '24'
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
+
+      - name: Setup Bun
+
+        uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci --ignore-scripts; then
+            if bun install --frozen-lockfile; then
               break
             fi
             if [ "$attempt" -eq 3 ]; then
-              echo "::error::npm ci failed after 3 attempts; dependency audit cannot proceed."
+              echo "::error::bun install --frozen-lockfile failed after 3 attempts; dependency audit cannot proceed."
               exit 1
             fi
-            echo "npm ci failed on attempt $attempt; verifying cache and retrying after transient network backoff..."
-            if ! npm cache verify; then
-              echo "npm cache verify failed; continuing because npm ci retry is authoritative."
+            echo "bun install --frozen-lockfile failed on attempt $attempt; verifying cache and retrying after transient network backoff..."
+            if ! bun pm cache; then
+              echo "bun pm cache failed; continuing because bun install --frozen-lockfile retry is authoritative."
             fi
             sleep $((attempt * 20))
           done
 
       - name: Run npm audit
         run: |
-          echo "Running npm security audit (production dependencies only)..."
-          npm audit --omit=dev --audit-level=high
-          if [ $? -ne 0 ]; then
-            echo "::error::High severity vulnerabilities found in production dependencies. Run 'npm audit fix' to resolve."
-            exit 1
-          fi
-          echo "✅ No high/critical vulnerabilities in production dependencies"
-          echo "Note: Dev dependencies (Hardhat/ethers v5) have known vulnerabilities that are acceptable for development tools"
+          node scripts/ci/check-dependency-audit.mjs
 
       - name: Check Python lockfile exists and is valid
         run: |
