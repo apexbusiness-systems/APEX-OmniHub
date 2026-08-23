@@ -1,0 +1,22 @@
+default_platform(:android)
+
+platform :android do
+  desc "Submit a new Beta Build to Play Store Internal Track"
+  lane :beta do
+    upload_to_play_store(
+      track: 'internal',
+      aab: 'android/app/build/outputs/bundle/release/app-release.aab',
+      skip_upload_apk: true
+    )
+  end
+
+  desc "Deploy a new version to the Google Play Store"
+  lane :release do
+    upload_to_play_store(
+      track: 'production',
+      aab: 'android/app/build/outputs/bundle/release/app-release.aab',
+      skip_upload_apk: true,
+      rollout: '0.1' # Staged rollout example
+    )
+  end
+end

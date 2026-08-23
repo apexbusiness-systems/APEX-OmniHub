@@ -155,7 +155,11 @@ async def test_compute_14_day_baseline_error():
     with patch("activities.physiomni_activities.get_database_provider", return_value=db):
         with pytest.raises(ApplicationError):
             await compute_14_day_baseline(
-                {"device_id": "x", "tenant_id": "y", "device_serial": "z"}
+                {
+                    "device_id": "x",
+                    "tenant_id": "y",
+                    "device_serial": "z",
+                }
             )
 
 

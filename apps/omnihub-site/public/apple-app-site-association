@@ -3,7 +3,7 @@
     "apps": [],
     "details": [
       {
-        "appID": "9U59353982.icu.apexomnihub.omnilink",
+        "appID": "NWGUYF42KW.com.apexbusiness.omnilink",
         "paths": [ "/verify/*", "/approve/*", "/login/*", "/dash/approvals/*" ]
       }
     ]

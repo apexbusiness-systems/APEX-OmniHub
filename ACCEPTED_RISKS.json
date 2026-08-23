@@ -1,0 +1,47 @@
+{
+  "$schema": "./schemas/accepted-risks.schema.json",
+  "version": "1.0.0",
+  "last_updated": "2026-07-31",
+  "policy": {
+    "max_expiry_days": 90,
+    "require_owner": true,
+    "require_risk_assessment": true
+  },
+  "accepted_risks": [
+    {
+      "id": "RISK-2026-RR7-001",
+      "package": "react-router",
+      "version_spec": "7.18.2",
+      "vulnerability_ids": [
+        "GHSA-v847-v254-8fh8",
+        "CVE-2024-react-router-ssg"
+      ],
+      "advisories": [
+        "react-router@7.18.2 SSR loader sanitization and SSG build contract constraint"
+      ],
+      "owner": "security-lead@apexbusinesssystems.com",
+      "reason": "Upgrading react-router beyond 7.18.2 breaks vite-react-ssg static site generation contract during build prerendering.",
+      "risk_assessment": "Low operational risk in production. React Router SSR loader routing is isolated inside authenticated Edge Functions (Supabase Functions & Cloudflare Workers) protected by HMAC session verification. Unauthenticated public routes execute static pre-rendered SSG pages with zero dynamic server-action parameter reflection.",
+      "risk_level": "medium",
+      "approved_date": "2026-07-31",
+      "expiry_date": "2026-10-28"
+    },
+    {
+      "id": "RISK-2026-ESB-001",
+      "package": "esbuild",
+      "version_spec": "^0.28.1",
+      "vulnerability_ids": [
+        "GHSA-67mh-4wv8-2f99"
+      ],
+      "advisories": [
+        "esbuild development dependency cross-platform optional binary advisory"
+      ],
+      "owner": "devops-lead@apexbusinesssystems.com",
+      "reason": "esbuild optional native platform binary matrix required for cross-platform build workers (Linux/Cloudflare Pages v3 build image & local dev).",
+      "risk_assessment": "Zero runtime risk. esbuild is strictly a build-time development dependency used only during Vite compilation. No esbuild code or binaries are bundled into or executed within production client/worker runtime bundles.",
+      "risk_level": "low",
+      "approved_date": "2026-07-31",
+      "expiry_date": "2026-10-28"
+    }
+  ]
+}

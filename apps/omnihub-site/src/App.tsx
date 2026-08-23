@@ -21,6 +21,8 @@ import { LoginPage } from "@/pages/Login";
 import { PrivacyPage } from "@/pages/Privacy";
 import { SupportPage } from "@/pages/Support";
 import { TermsPage } from "@/pages/Terms";
+import { OmniLinkSupportPage } from "@/pages/OmniLinkSupport";
+import { OmniLinkPrivacyPage } from "@/pages/OmniLinkPrivacy";
 import FounderStory from "@/pages/FounderStory";
 import { DemoModeProvider } from "@/contexts/DemoModeContext";
 import { AdvancedAnalyticsPage } from "@/pages/AdvancedAnalytics";
@@ -103,8 +105,12 @@ const preAuthRoutes: readonly AppRoute[] = [
   { path: "/man-mode.html", element: <ManModePage />, isPublic: true, routeName: "MAN Mode Legacy" },
   { path: "/privacy", element: <PrivacyPage />, isPublic: true, routeName: "Privacy" },
   { path: "/privacy.html", element: <PrivacyPage />, isPublic: true, routeName: "Privacy" },
+  { path: "/omnilink-privacy", element: <OmniLinkPrivacyPage />, isPublic: true, routeName: "OmniLink Privacy" },
+  { path: "/omnilink-privacy.html", element: <OmniLinkPrivacyPage />, isPublic: true, routeName: "OmniLink Privacy" },
   { path: "/support", element: <SupportPage />, isPublic: true, routeName: "Support" },
   { path: "/support.html", element: <SupportPage />, isPublic: true, routeName: "Support" },
+  { path: "/omnilink-support", element: <OmniLinkSupportPage />, isPublic: true, routeName: "OmniLink Support" },
+  { path: "/omnilink-support.html", element: <OmniLinkSupportPage />, isPublic: true, routeName: "OmniLink Support" },
   { path: "/terms", element: <TermsPage />, isPublic: true, routeName: "Terms" },
   { path: "/terms.html", element: <TermsPage />, isPublic: true, routeName: "Terms" },
   { path: "/request-access", element: <RequestAccessPage />, isPublic: true, routeName: "Request Access" },

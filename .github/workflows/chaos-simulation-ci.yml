@@ -58,8 +58,12 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Setup Bun
+
+        uses: oven-sh/setup-bun@v2
+
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: bun install --frozen-lockfile
 
       - name: Run simulation unit tests
         run: npm run test:sim
@@ -91,8 +95,12 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Setup Bun
+
+        uses: oven-sh/setup-bun@v2
+
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: bun install --frozen-lockfile
 
       - name: Run quick smoke test
         run: npm run sim:quick
@@ -125,8 +133,12 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Setup Bun
+
+        uses: oven-sh/setup-bun@v2
+
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: bun install --frozen-lockfile
 
       - name: Run dry simulation
         run: npm run sim:dry
@@ -166,8 +178,12 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Setup Bun
+
+        uses: oven-sh/setup-bun@v2
+
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: bun install --frozen-lockfile
 
       - name: Run full chaos simulation (seed ${{ matrix.seed }})
         run: npm run sim:chaos -- --seed ${{ matrix.seed }}
@@ -298,8 +314,12 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Setup Bun
+
+        uses: oven-sh/setup-bun@v2
+
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: bun install --frozen-lockfile
 
       - name: Run burst mode (1000 events)
         run: npm run sim:burst
@@ -351,8 +371,12 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Setup Bun
+
+        uses: oven-sh/setup-bun@v2
+
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: bun install --frozen-lockfile
 
       - name: Run simulation twice with same seed
         run: |
