@@ -400,7 +400,9 @@ serve(async (req: Request) => {
           controller.close();
 
           if (APEX_COMPRESS_ENABLED && !compressionMeta.cacheHit) {
-            const cacheKey = compressedMessages.filter(m => m.role === 'system').map(m => extractText(m.content)).join('\n') + provider + model;
+            // ⚡ Bolt: Reuse the already-calculated systemContent instead of performing a duplicate
+            // .filter().map().join() iteration over compressedMessages
+            const cacheKey = systemContent + provider + model;
             const cachedObj = {
               id: "chatcmpl-" + crypto.randomUUID().replace(/-/g, ''),
               object: "chat.completion",
