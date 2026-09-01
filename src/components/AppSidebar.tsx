@@ -2,6 +2,14 @@ import { Image, Folder, Play, Globe, Settings, LifeBuoy, LayoutDashboard, Headph
 import { useOmniModal } from '../stores/omniModalStore';
 import type { OmniModalConfig } from '../stores/omniModalStore';
 
+// ⚡ Bolt: Hoist static navItems outside the component so they are never recreated on render
+const NAV_ITEMS = [
+  { title: 'Dashboard', moduleKey: 'dashboard', icon: LayoutDashboard, iconColor: 'text-orange-400', glowColor: 'from-orange-500/20 to-amber-500/10' },
+  { title: 'Links', moduleKey: 'links', icon: Image, iconColor: 'text-blue-400', glowColor: 'from-blue-500/20 to-indigo-500/10' },
+  { title: 'Files', moduleKey: 'files', icon: Folder, iconColor: 'text-blue-300', glowColor: 'from-blue-400/20 to-cyan-500/10' },
+  { title: 'Automations', moduleKey: 'automations', icon: Play, iconColor: 'text-indigo-400', glowColor: 'from-indigo-500/20 to-purple-500/10' },
+];
+
 /**
  * AppSidebar — SPA-native sidebar navigation.
  * All items dispatch module modals within OmniDash.
@@ -9,13 +17,6 @@ import type { OmniModalConfig } from '../stores/omniModalStore';
  */
 export function AppSidebar() {
   const activeModuleKey = useOmniModal((s) => s.activeModal?.contextData?.moduleKey as string | undefined);
-
-  const navItems = [
-    { title: 'Dashboard', moduleKey: 'dashboard', icon: LayoutDashboard, iconColor: 'text-orange-400', glowColor: 'from-orange-500/20 to-amber-500/10' },
-    { title: 'Links', moduleKey: 'links', icon: Image, iconColor: 'text-blue-400', glowColor: 'from-blue-500/20 to-indigo-500/10' },
-    { title: 'Files', moduleKey: 'files', icon: Folder, iconColor: 'text-blue-300', glowColor: 'from-blue-400/20 to-cyan-500/10' },
-    { title: 'Automations', moduleKey: 'automations', icon: Play, iconColor: 'text-indigo-400', glowColor: 'from-indigo-500/20 to-purple-500/10' },
-  ];
 
   const openModule = (moduleKey: string, title: string) => {
     const config: OmniModalConfig = {
@@ -50,7 +51,7 @@ export function AppSidebar() {
                 <Globe className="w-3 h-3 text-purple-400" />
               </div>
             </button>
-            {navItems.map((item) => (
+            {NAV_ITEMS.map((item) => (
               <button
                 key={item.title}
                 type="button"
