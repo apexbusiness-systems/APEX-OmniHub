@@ -19,7 +19,7 @@ export class PolicyEngine {
   private getRegex(list: string[]): RegExp {
     let regex = this.compiledRegexCache.get(list);
     if (!regex) {
-      const escapedList = list.map(c => c.split("").map(char => /[.*+?^\$\{\}()|[\]\\]/.test(char) ? "\\" + char : char).join(""));
+      const escapedList = list.map(c => c.split("").map(char => /[.*+?^${}()|[\]\\]/.test(char) ? "\\" + char : char).join(""));
       regex = new RegExp(escapedList.join("|"), "i");
       this.compiledRegexCache.set(list, regex);
     }
