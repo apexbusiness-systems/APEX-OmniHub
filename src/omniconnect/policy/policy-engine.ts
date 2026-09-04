@@ -14,6 +14,17 @@ import { SchemaValidator } from './schema-validator';
 export class PolicyEngine {
   private readonly profiles = new Map<string, AppFilterProfile>();
   private readonly schemaValidator = new SchemaValidator();
+  private readonly compiledRegexCache = new WeakMap<string[], RegExp>();
+
+  private getRegex(list: string[]): RegExp {
+    let regex = this.compiledRegexCache.get(list);
+    if (!regex) {
+      const escapedList = list.map(c => c.split("").map(char => /[.*+?^${}()|[\]\\]/.test(char) ? "\\" + char : char).join(""));
+      regex = new RegExp(escapedList.join("|"), "i");
+      this.compiledRegexCache.set(list, regex);
+    }
+    return regex;
+  }
 
   async filter(
     events: CanonicalEvent[],
@@ -104,15 +115,15 @@ export class PolicyEngine {
     if (!profile.allowedEventTypes.includes(event.eventType)) return false;
 
     const { allow, deny } = profile.contentCategories;
-    const body = JSON.stringify({ p: event.payload, m: event.metadata }).toLowerCase();
-    const hasMatch = (list: string[]) => list.some(c => body.includes(c.toLowerCase()));
+    const body = JSON.stringify({ p: event.payload, m: event.metadata });
 
-    if (deny.length > 0 && hasMatch(deny)) return false;
+    // ⚡ Bolt: Use Regex testing to replace O(N*M) array iteration with O(1) regex evaluation
+    if (deny.length > 0 && this.getRegex(deny).test(body)) return false;
     
     // Fail closed: if allow list is empty, we do not allow any payload that hasn't been explicitly allowed
     if (allow.length === 0) return false;
     
-    return hasMatch(allow);
+    return this.getRegex(allow).test(body);
   }
 
   // ⚡ Bolt: Define regex outside function scope so we only compile once
