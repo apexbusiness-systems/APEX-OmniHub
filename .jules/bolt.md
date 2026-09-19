@@ -30,9 +30,11 @@ status: verified
 **Learning:** Extracting list items into a `React.memo`ized component is especially critical for live feeds (e.g., SSE or WebSocket connections). Without this, adding a single new item to the top of an array causes every existing item in the list to re-render, creating an O(n) performance degradation that blocks the main thread.
 **Action:** Always extract and memoize list items in components that frequently append or prepend to lists.
 ## 2026-06-12 - O(N) array search inside object traversal is a major bottleneck
-**Learning:** Calling `Object.entries()` inside loops (e.g. for detranslating values based on reverse lookup) is highly inefficient due to array allocations and O(N) searching for reverse key lookups.
+**Learning:** Calling `Object.entries()` inside loops (e.g. for detranslating values based on reverse lookup) is highly inefficient due to array allocations and O(N) lookups.
 **Action:** Use a pre-calculated `REVERSE_DICTIONARY` with a direct lookup utilizing `Object.prototype.hasOwnProperty.call` to prevent prototype pollution and achieve O(1) direct property access instead.
 ## 2026-06-13 - Replaced O(N²) Set allocations and iteration inside jaccardSimilarity with O(1) cached Sets and mathematical union
 **Learning:** In the `deduplicateEntries` function, the initial string tokenization (`new Set(text.split(...))`) inside an O(N²) comparison loop via `unique.some()` caused N*M redundant array iterations and garbage collection allocations per loop for both the target and the comparison items. Furthermore, `new Set([...wordsA, ...wordsB])` created unnecessary intermediate array and Set allocations for the Jaccard union.
 **Action:** Extract tokenization into a cached array mapping (`uniqueSets`) and reuse them iteratively. Use `union = wordsA.size + wordsB.size - intersection` instead of the spread syntax to bypass object allocations and execute purely mathematically.
-## 2026-07-11 - Replaced O(N) Array Searches with O(1) Sets in Validation\n**Learning:** Checking against Enum values using `Object.values(Enum).includes(...)` inside high-frequency validation functions like `validateCanonicalEvent` causes continuous array allocations and O(N) lookups.\n**Action:** Always pre-calculate a `new Set(Object.values(Enum))` outside the function scope and use `.has()` for O(1) validation.
+## 2026-07-11 - Replaced O(N) Array Searches with O(1) Sets in Validation
+**Learning:** Checking against Enum values using `Object.values(Enum).includes(...)` inside high-frequency validation functions like `validateCanonicalEvent` causes continuous array allocations and O(N) lookups.
+**Action:** Always pre-calculate a `new Set(Object.values(Enum))` outside the function scope and use `.has()` for O(1) validation.
