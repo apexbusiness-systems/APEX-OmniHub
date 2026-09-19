@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -87,14 +87,19 @@ export function useUsageMetering(days = 7) {
     staleTime: 15_000,
   });
 
-  const summary: UsageMeteringSummary[] = query.data
-    ? aggregateUsageMetering(query.data)
-    : [];
+  // ⚡ Bolt: Memoized the aggregation and token reduction to prevent O(n) re-calculations on every hook render
+  const { summary, totalTokens } = useMemo(() => {
+    const sum: UsageMeteringSummary[] = query.data
+      ? aggregateUsageMetering(query.data)
+      : [];
 
-  const totalTokens = summary.reduce(
-    (acc, s) => acc + s.total_input_tokens + s.total_output_tokens,
-    0,
-  );
+    const tokens = sum.reduce(
+      (acc, s) => acc + s.total_input_tokens + s.total_output_tokens,
+      0,
+    );
+
+    return { summary: sum, totalTokens: tokens };
+  }, [query.data]);
 
   return { ...query, summary, totalTokens };
 }
