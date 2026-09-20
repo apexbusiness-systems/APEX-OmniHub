@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -144,12 +144,13 @@ export const ConnectorKit = ({ integration, onConnect }: ConnectorKitProps) => {
         }
     };
 
-    const config = {
+    // ⚡ Bolt: Wrapped `config` object in a `useMemo` hook to prevent it from being re-created on every render.
+    const config = useMemo(() => ({
         serverUrl,
         publicUrl,
         authorization: generatedKey ? `Bearer ${generatedKey.key}` : 'Bearer <YOUR_API_KEY>',
         integrationId: integration.id,
-    };
+    }), [serverUrl, publicUrl, generatedKey, integration.id]);
 
     let testAlertClassName = '';
     if (testStatus === 'passed') testAlertClassName = 'border-emerald-500/50 bg-emerald-500/10';
