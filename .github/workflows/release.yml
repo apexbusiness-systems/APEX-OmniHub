@@ -161,7 +161,7 @@ jobs:
           TF_TOKEN_app_terraform_io: ${{ secrets.TF_PROD_TOKEN }}
       - name: Upload Terraform plan artifact
         if: steps.tf_plan.outputs.tf_plan_result == 'pass'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: tfplan
           path: terraform/environments/production/tfplan
@@ -195,7 +195,7 @@ jobs:
         run: node scripts/ci/write-release-validation-summary.mjs
       - name: Upload release-validation summary
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pre-apply-release-validation-summary
           path: |
@@ -294,7 +294,7 @@ jobs:
         run: node scripts/ci/write-release-validation-summary.mjs
       - name: Upload final release-validation summary
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: final-release-validation-summary
           path: release-validation-summary.json

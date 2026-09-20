@@ -40,7 +40,7 @@ jobs:
         run: |
           node scripts/compliance/generate_retention_evidence.mjs
           node scripts/compliance/check_retention_consistency.mjs
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: retention-evidence
           path: build-artifacts/retention-evidence.json
@@ -74,7 +74,7 @@ jobs:
       - run: bunx @cyclonedx/cdxgen -t node --no-validate -o build-artifacts/sbom-npm.cdx.json
       - run: pip install cyclonedx-bom
       - run: cyclonedx-py environment --output-format JSON --output-file build-artifacts/sbom-python.cdx.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: sbom-artifacts
           path: |
