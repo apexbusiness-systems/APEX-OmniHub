@@ -35,22 +35,14 @@ export const AppTile = ({
         borderShadowClass = `bg-white border-2 border-[hsl(var(--navy))] shadow-lg ${isSmall ? '' : 'hover:shadow-xl'}`;
     }
 
-    const containerClasses = [baseClasses, paddingClass, borderShadowClass].join(' ');
+    // ⚡ Bolt: Replaced array creation and `.join(' ')` with template literals to avoid unnecessary allocations on every render.
+    const containerClasses = `${baseClasses} ${paddingClass} ${borderShadowClass}`;
 
-    const iconClasses = [
-        'mb-2 object-cover rounded-lg',
-        isSmall ? 'w-icon-sm h-icon-sm md:w-icon-md md:h-icon-md' : 'w-icon-lg h-icon-lg md:w-icon-xl md:h-icon-xl mb-3'
-    ].join(' ');
+    const iconClasses = `mb-2 object-cover rounded-lg ${isSmall ? 'w-icon-sm h-icon-sm md:w-icon-md md:h-icon-md' : 'w-icon-lg h-icon-lg md:w-icon-xl md:h-icon-xl mb-3'}`;
 
-    const textClasses = [
-        'font-medium text-[hsl(var(--navy))]',
-        isSmall ? 'text-xs md:text-sm' : 'text-sm md:text-base font-semibold'
-    ].join(' ');
+    const textClasses = `font-medium text-[hsl(var(--navy))] ${isSmall ? 'text-xs md:text-sm' : 'text-sm md:text-base font-semibold'}`;
 
-    const placeholderClasses = [
-        'text-muted-foreground',
-        isSmall ? 'text-xs md:text-sm' : 'text-sm md:text-base font-medium'
-    ].join(' ');
+    const placeholderClasses = `text-muted-foreground ${isSmall ? 'text-xs md:text-sm' : 'text-sm md:text-base font-medium'}`;
 
     const handleClick = () => {
         if (app.name === 'APEX' && isInstallable) {
