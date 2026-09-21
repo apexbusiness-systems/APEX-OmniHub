@@ -73,10 +73,8 @@ export const encodeAudioForAPI = (float32Array: Float32Array): string => {
 };
 
 const createWavFromPCM = (pcmData: Uint8Array) => {
-  const int16Data = new Int16Array(pcmData.length / 2);
-  for (let i = 0; i < pcmData.length; i += 2) {
-    int16Data[i / 2] = (pcmData[i + 1] << 8) | pcmData[i];
-  }
+  // Bolt: The pcmData is already in little-endian 16-bit format, so we can skip
+  // the O(N) manual byte-shifting loop (Int16Array conversion) and just use it directly.
   
   const wavHeader = new ArrayBuffer(44);
   const view = new DataView(wavHeader);
@@ -94,7 +92,7 @@ const createWavFromPCM = (pcmData: Uint8Array) => {
   const byteRate = sampleRate * blockAlign;
 
   writeString(view, 0, 'RIFF');
-  view.setUint32(4, 36 + int16Data.byteLength, true);
+  view.setUint32(4, 36 + pcmData.length, true);
   writeString(view, 8, 'WAVE');
   writeString(view, 12, 'fmt ');
   view.setUint32(16, 16, true);
@@ -105,11 +103,11 @@ const createWavFromPCM = (pcmData: Uint8Array) => {
   view.setUint16(32, blockAlign, true);
   view.setUint16(34, bitsPerSample, true);
   writeString(view, 36, 'data');
-  view.setUint32(40, int16Data.byteLength, true);
+  view.setUint32(40, pcmData.length, true);
 
-  const wavArray = new Uint8Array(wavHeader.byteLength + int16Data.byteLength);
+  const wavArray = new Uint8Array(wavHeader.byteLength + pcmData.length);
   wavArray.set(new Uint8Array(wavHeader), 0);
-  wavArray.set(new Uint8Array(int16Data.buffer), wavHeader.byteLength);
+  wavArray.set(pcmData, wavHeader.byteLength);
   
   return wavArray;
 };
