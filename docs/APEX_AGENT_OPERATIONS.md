@@ -1763,3 +1763,6 @@ modules (`workflows/saga_context.py`, `workflows/agent_saga_support.py`,
 - **File Updated:** `.github/workflows/arise.yml`
 - **Root Cause Fix:** Replaced 3-way `git merge` between `automation/arise-snapshot-current` and `origin/main` with `git checkout -B "$branch" "origin/${{ github.ref_name }}"`.
 - **Operational Justification:** Resetting the rolling snapshot branch directly to the target reference (`main`) ensures the snapshot branch inherits 100% of current source code with ZERO code merge conflicts (`src/lib/storage/providers/s3.ts`). Generated snapshot reports are applied cleanly on top and force-pushed to the rolling PR.
+
+## 2026-07-28: GitHub CI Workflows Update
+- Updated GitHub Actions pinned SHAs for `actions/checkout`, `actions/setup-node`, `actions/setup-java`, and `android-actions/setup-android` to use their `v3`/`v4` tags. This resolved Node.js 20 deprecation warnings and forced-update execution failures occurring on Node 24.
