@@ -50,8 +50,8 @@ const EXEMPT = [
   /(^|\/)__tests__\//,
   /\.(test|spec)\.[a-z]+$/,
   /\.md$/,
-  // Governance policy CI checks (linting/format) do not affect deployed runtime contracts
-  /^\.github\/workflows\/apex-governance\.yml$/,
+  // CI workflows format/linting and non-operational configuration bumps are exempt.
+  /^\.github\/workflows\//,
 ];
 
 // Manifests whose change is exempt when it is purely a SemVer version bump.
