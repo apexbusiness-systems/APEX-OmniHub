@@ -29,6 +29,8 @@ import { buildCorsHeaders } from "../_shared/cors.ts";
 import { isMcpGatewayAuthorized } from "./auth.ts";
 import { ALL_TOOLS, dispatchTool } from "./tools/registry.ts";
 
+const ALL_TOOL_NAMES = new Set(ALL_TOOLS.map((t) => t.name));
+
 // ──────────────────────────────────────────────────────────────────
 // MCP Protocol Constants
 // ──────────────────────────────────────────────────────────────────
@@ -151,7 +153,7 @@ async function handleRpcMessage(msg: RpcRequest): Promise<unknown> {
       if (!p?.name) {
         return rpcError(id ?? null, -32602, "Invalid params: 'name' is required");
       }
-      const toolExists = ALL_TOOLS.some((t) => t.name === p.name);
+      const toolExists = ALL_TOOL_NAMES.has(p.name);
       if (!toolExists) {
         return rpcError(id ?? null, -32602, `Unknown tool: ${p.name}`);
       }

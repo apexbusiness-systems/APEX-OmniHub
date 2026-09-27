@@ -1763,3 +1763,11 @@ modules (`workflows/saga_context.py`, `workflows/agent_saga_support.py`,
 - **File Updated:** `.github/workflows/arise.yml`
 - **Root Cause Fix:** Replaced 3-way `git merge` between `automation/arise-snapshot-current` and `origin/main` with `git checkout -B "$branch" "origin/${{ github.ref_name }}"`.
 - **Operational Justification:** Resetting the rolling snapshot branch directly to the target reference (`main`) ensures the snapshot branch inherits 100% of current source code with ZERO code merge conflicts (`src/lib/storage/providers/s3.ts`). Generated snapshot reports are applied cleanly on top and force-pushed to the rolling PR.
+
+## 9.40 O(1) tool routing in MCP Gateway (Bolt Optimization)
+
+**Changed files:** `supabase/functions/mcp-gateway/index.ts`, `supabase/functions/mcp-gateway/tools/registry.ts`
+
+- **Root cause/Scope:** `ALL_TOOLS.some()` and other `.some()` array methods were being used for tool dispatching on every RPC invocation, creating an O(N) lookup bottleneck.
+- **Remediation:** Replaced O(N) array `.some()` traversals with O(1) `Set.has()` lookups by pre-calculating tool name Sets (`ALL_TOOL_NAMES`, `DB_TOOL_NAMES`, etc.) during module initialization.
+- **Operational impact:** Performance optimization for the MCP gateway. No change to deployed endpoints, schema, or API surface.
