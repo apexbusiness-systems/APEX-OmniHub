@@ -30,14 +30,19 @@ export const ALL_TOOLS: MCPTool[] = [
   ...omnihubTools,
 ];
 
+const DB_TOOL_NAMES = new Set(dbTools.map((t) => t.name));
+const GITHUB_TOOL_NAMES = new Set(githubTools.map((t) => t.name));
+const CLOUDFLARE_TOOL_NAMES = new Set(cloudflareTools.map((t) => t.name));
+const OMNIHUB_TOOL_NAMES = new Set(omnihubTools.map((t) => t.name));
+
 export async function dispatchTool(
   name: string,
   args: Record<string, unknown>
 ): Promise<ToolCallResult> {
-  if (dbTools.some((t) => t.name === name)) return handleDbTool(name, args);
-  if (githubTools.some((t) => t.name === name)) return handleGithubTool(name, args);
-  if (cloudflareTools.some((t) => t.name === name)) return handleCloudflareTool(name, args);
-  if (omnihubTools.some((t) => t.name === name)) return handleOmnihubTool(name, args);
+  if (DB_TOOL_NAMES.has(name)) return handleDbTool(name, args);
+  if (GITHUB_TOOL_NAMES.has(name)) return handleGithubTool(name, args);
+  if (CLOUDFLARE_TOOL_NAMES.has(name)) return handleCloudflareTool(name, args);
+  if (OMNIHUB_TOOL_NAMES.has(name)) return handleOmnihubTool(name, args);
   return {
     content: [{ type: "text", text: `Unknown tool: ${name}` }],
     isError: true,
