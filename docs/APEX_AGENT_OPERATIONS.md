@@ -1772,3 +1772,12 @@ modules (`workflows/saga_context.py`, `workflows/agent_saga_support.py`,
 - **Remediation:**
   - Updated `actions/setup-node`, `actions/checkout`, `actions/setup-java`, and `android-actions/setup-android` to their `v4` and `v3` tags in `.github/workflows/mobile-build-verify.yml` which natively support Node.js 24.
 - **Operational impact:** Fixes Android CI build failures without changing underlying mobile build configurations or deployed services.
+
+## 9.69 Update mobile-build-verify GitHub Action Java Version — 2026-09-28
+
+**Changed files:** `.github/workflows/mobile-build-verify.yml`
+
+- **Root cause/Scope:** `setup-java@v4` is deprecated and caused the CI build check to fail with a warning message.
+- **Remediation:**
+  - Updated `actions/setup-java` to `v5` in `.github/workflows/mobile-build-verify.yml`.
+- **Operational impact:** Fixes Android CI build failures.
