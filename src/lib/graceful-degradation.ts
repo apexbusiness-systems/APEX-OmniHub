@@ -207,7 +207,11 @@ export class ServiceHealthChecker {
   }
   
   isAnyServiceDown(): boolean {
-    return Array.from(this.services.values()).some(healthy => !healthy);
+    // ⚡ Bolt: Use an iterator instead of Array.from() to avoid O(N) array allocation overhead
+    for (const healthy of this.services.values()) {
+      if (!healthy) return true;
+    }
+    return false;
   }
 }
 
