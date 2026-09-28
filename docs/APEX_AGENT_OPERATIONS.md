@@ -1763,3 +1763,12 @@ modules (`workflows/saga_context.py`, `workflows/agent_saga_support.py`,
 - **File Updated:** `.github/workflows/arise.yml`
 - **Root Cause Fix:** Replaced 3-way `git merge` between `automation/arise-snapshot-current` and `origin/main` with `git checkout -B "$branch" "origin/${{ github.ref_name }}"`.
 - **Operational Justification:** Resetting the rolling snapshot branch directly to the target reference (`main`) ensures the snapshot branch inherits 100% of current source code with ZERO code merge conflicts (`src/lib/storage/providers/s3.ts`). Generated snapshot reports are applied cleanly on top and force-pushed to the rolling PR.
+
+## 9.68 Update mobile-build-verify GitHub Action Node Versions — 2026-09-28
+
+**Changed files:** `.github/workflows/mobile-build-verify.yml`
+
+- **Root cause/Scope:** GitHub Actions targeting Node.js 20 were deprecated and forced to run on Node.js 24, causing the CI pipeline check suite to fail with warnings.
+- **Remediation:**
+  - Updated `actions/setup-node`, `actions/checkout`, `actions/setup-java`, and `android-actions/setup-android` to their `v4` and `v3` tags in `.github/workflows/mobile-build-verify.yml` which natively support Node.js 24.
+- **Operational impact:** Fixes Android CI build failures without changing underlying mobile build configurations or deployed services.
