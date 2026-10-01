@@ -148,8 +148,12 @@ export class EdgeCostTracker {
       };
     }
 
-    const totalDurationMs = this.entries.reduce((sum, e) => sum + e.durationMs, 0);
-    const totalCostMicros = this.entries.reduce((sum, e) => sum + e.costMicros, 0);
+    let totalDurationMs = 0;
+    let totalCostMicros = 0;
+    for (const entry of this.entries) {
+      totalDurationMs += entry.durationMs;
+      totalCostMicros += entry.costMicros;
+    }
     const sorted = [...this.entries].sort((a, b) => a.durationMs - b.durationMs);
     const p95Index = Math.floor(sorted.length * 0.95);
 
