@@ -33,6 +33,9 @@ const ROUTE_ACCESS: Record<string, (opts: PostLoginDestinationOptions) => boolea
   '/integrations': ({ isPaid }) => isPaid,
 };
 
+// ⚡ Bolt: Pre-calculate route access entries to avoid Object.entries() allocation overhead on every routing check
+const PRE_CALCULATED_ROUTE_ACCESS_ENTRIES = Object.entries(ROUTE_ACCESS);
+
 /**
  * Validate if user can access a specific route
  */
@@ -46,7 +49,7 @@ function canAccessRoute(route: string, options: PostLoginDestinationOptions): bo
   }
 
   // Find matching route pattern (exact or prefix match)
-  for (const [pattern, checkAccess] of Object.entries(ROUTE_ACCESS)) {
+  for (const [pattern, checkAccess] of PRE_CALCULATED_ROUTE_ACCESS_ENTRIES) {
     if (route === pattern || route.startsWith(pattern + '/')) {
       return checkAccess(options);
     }
