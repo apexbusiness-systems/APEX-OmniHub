@@ -14,6 +14,7 @@ import { SchemaValidator } from './schema-validator';
 export class PolicyEngine {
   private readonly profiles = new Map<string, AppFilterProfile>();
   private readonly schemaValidator = new SchemaValidator();
+  private readonly regexCache = new Map<string, { allow: RegExp | null; deny: RegExp | null }>();
 
   async filter(
     events: CanonicalEvent[],
@@ -39,12 +40,31 @@ export class PolicyEngine {
     return filteredEvents;
   }
 
+  private getRegexCache(profile: AppFilterProfile) {
+    if (!this.regexCache.has(profile.appId)) {
+      const escapeRegExp = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      this.regexCache.set(profile.appId, {
+        allow:
+          profile.contentCategories.allow.length > 0
+            ? new RegExp(profile.contentCategories.allow.map(escapeRegExp).join('|'), 'i')
+            : null,
+        deny:
+          profile.contentCategories.deny.length > 0
+            ? new RegExp(profile.contentCategories.deny.map(escapeRegExp).join('|'), 'i')
+            : null,
+      });
+    }
+    return this.regexCache.get(profile.appId)!;
+  }
+
   async getProfile(appId: string): Promise<AppFilterProfile | null> {
     return this.profiles.get(appId) || null;
   }
 
   async setProfile(profile: AppFilterProfile): Promise<void> {
     this.profiles.set(profile.appId, profile);
+    // ⚡ Bolt: Invalidate the regex cache when a profile is updated
+    this.regexCache.delete(profile.appId);
   }
 
   async validateEvent(event: CanonicalEvent, appId: string): Promise<ValidationResult> {
@@ -104,18 +124,19 @@ export class PolicyEngine {
     if (!profile.allowedEventTypes.includes(event.eventType)) return false;
 
     const { allow, deny } = profile.contentCategories;
-    const body = JSON.stringify({ p: event.payload, m: event.metadata }).toLowerCase();
-    const hasMatch = (list: string[]) => list.some(c => body.includes(c.toLowerCase()));
+    const body = JSON.stringify({ p: event.payload, m: event.metadata });
 
-    if (deny.length > 0 && hasMatch(deny)) return false;
+    // ⚡ Bolt: Use pre-compiled RegExp for O(1) matching vs O(N*M) array iteration
+    const { allow: allowRegex, deny: denyRegex } = this.getRegexCache(profile);
+
+    if (deny.length > 0 && denyRegex?.test(body)) return false;
     
     // Fail closed: if allow list is empty, we do not allow any payload that hasn't been explicitly allowed
     if (allow.length === 0) return false;
     
-    return hasMatch(allow);
+    return allowRegex ? allowRegex.test(body) : false;
   }
 
-  // ⚡ Bolt: Define regex outside function scope so we only compile once
   private static readonly PII_REGEX = new RegExp(['email', 'phone', 'ssn', 'address', 'name', 'user_email', 'phoneNumber'].join('|'), 'i');
   private static readonly EMOTIONAL_REGEX = new RegExp(['sentiment', 'emotion', 'mood', 'emotional', 'score', 'mood_score'].join('|'), 'i');
 
