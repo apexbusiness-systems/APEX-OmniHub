@@ -84,6 +84,15 @@ import { checkEntitlement } from '@/lib/web3/entitlements';
 const APEX_MEMBERSHIP_NFT_CONTRACT = (import.meta.env.VITE_APEX_NFT_CONTRACT ||
   '0x0000000000000000000000000000000000000000') as `0x${string}`;
 
+// ⚡ Bolt: Pre-calculate physical actuator capabilities into an O(1) Set lookup
+// to prevent O(N) allocation inside high-frequency normalization pipeline.
+const PHYSICAL_CAPABILITIES = new Set([
+  DeviceCapability.ACTUATE_LOCK,
+  DeviceCapability.ACTUATE_VALVE,
+  DeviceCapability.MOVE_ROBOT,
+  DeviceCapability.EXECUTE_TRAJECTORY,
+]);
+
 // =============================================================================
 // UNIVERSAL HASHING (Browser + Node.js compatible)
 // =============================================================================
@@ -715,15 +724,8 @@ class OmniPortEngine {
       canonicalDevice = await this.normalizeDeviceInput(input, ctx);
 
       // Physical actuator capabilities trigger MAN Mode
-      const physicalCapabilities = new Set([
-        DeviceCapability.ACTUATE_LOCK,
-        DeviceCapability.ACTUATE_VALVE,
-        DeviceCapability.MOVE_ROBOT,
-        DeviceCapability.EXECUTE_TRAJECTORY,
-      ]);
-
       const hasPhysicalCapability = canonicalDevice.capabilities.some((cap) =>
-        physicalCapabilities.has(cap)
+        PHYSICAL_CAPABILITIES.has(cap)
       );
 
       if (hasPhysicalCapability) {
