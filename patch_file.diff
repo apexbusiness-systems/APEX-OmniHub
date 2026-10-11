@@ -1,0 +1,12 @@
+--- .github/workflows/mobile-build-verify.yml
++++ .github/workflows/mobile-build-verify.yml
+@@ -135,7 +135,9 @@
+           distribution: 'temurin'
+
+       - name: Setup Android SDK
+-        uses: android-actions/setup-android@v3
++        uses: android-actions/setup-android@v3
++        with:
++          packages: 'cmdline-tools;latest'
+
+       - name: Setup Bun

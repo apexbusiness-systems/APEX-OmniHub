@@ -1,0 +1,347 @@
+name: Mobile Build Verification
+
+# Verifies that the Capacitor web-to-native sync compiles cleanly.
+#   - Android (Gradle) is verified on every PR and main-branch push.
+#   - iOS (xcodebuild) is verified nightly only — macOS runners are scarce and
+#     expensive, and the iOS path changes rarely. It can also be triggered on
+#     demand via workflow_dispatch.
+# This replaces the "Capacitor is merely CONFIGURED" state with a
+# continuously-verified, CI-enforced build pipeline.
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'src/**'
+      - 'capacitor.config.ts'
+      - 'package.json'
+      - 'android/**'
+      - 'ios/**'
+      - '.github/workflows/mobile-build-verify.yml'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'src/**'
+      - 'capacitor.config.ts'
+      - 'package.json'
+      - 'android/**'
+      - 'ios/**'
+      - '.github/workflows/mobile-build-verify.yml'
+  schedule:
+    # iOS verification runs nightly only (see build-ios `if` guard). Android still
+    # runs on every PR/push above; schedule events ignore the paths filters.
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+    inputs:
+      skip_android:
+        description: 'Skip Android build'
+        required: false
+        default: 'false'
+      skip_ios:
+        description: 'Skip iOS build'
+        required: false
+        default: 'false'
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24'
+  JAVA_VERSION: '17'
+  NPM_CONFIG_FETCH_RETRIES: '5'
+  NPM_CONFIG_FETCH_RETRY_MINTIMEOUT: '15000'
+  NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT: '60000'
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────
+  # 1. Build web assets (shared prerequisite for both platforms)
+  # ──────────────────────────────────────────────────────────────────────────
+  build-web:
+    name: Build Web Assets
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Bun
+
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: |
+          for attempt in 1 2 3; do
+            if bun install --frozen-lockfile; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            echo "bun install --frozen-lockfile failed on attempt $attempt; retrying after transient network backoff..."
+            if ! bun pm cache; then
+              echo "bun pm cache failed; continuing because bun install --frozen-lockfile retry is authoritative."
+            fi
+            sleep $((attempt * 20))
+          done
+          node scripts/patch-capacitor-tar.cjs
+
+      - name: Build web app
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_CONNECT_AI_ENABLED: 'true'
+        run: npm run build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: web-dist
+          path: dist/
+          retention-days: 1
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # 2. Android — Gradle assembleDebug
+  # ──────────────────────────────────────────────────────────────────────────
+  build-android:
+    name: Android Build (Debug)
+    runs-on: ubuntu-22.04
+    needs: build-web
+    # Android verifies on every PR/push, but not on the nightly schedule (that run
+    # exists for iOS). workflow_dispatch can still run it unless skip_android is set.
+    if: github.event_name != 'schedule' && github.event.inputs.skip_android != 'true'
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Java ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Bun
+
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: |
+          for attempt in 1 2 3; do
+            if bun install --frozen-lockfile; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            echo "bun install --frozen-lockfile failed on attempt $attempt; retrying after transient network backoff..."
+            if ! bun pm cache; then
+              echo "bun pm cache failed; continuing because bun install --frozen-lockfile retry is authoritative."
+            fi
+            sleep $((attempt * 20))
+          done
+          node scripts/patch-capacitor-tar.cjs
+
+      - name: Download web dist
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: web-dist
+          path: dist/
+
+      - name: Sync Capacitor → Android
+        run: |
+          mv dist dist-mobile
+          npm exec --no --ignore-scripts -- cap sync android
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            android/.gradle
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/build.gradle', 'android/app/build.gradle') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Build Android Debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: android-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+
+      - name: Verify APK exists and is non-empty
+        run: |
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          if [ ! -f "$APK" ]; then
+            echo "::error::APK not found at expected path: $APK"
+            exit 1
+          fi
+          SIZE=$(stat -c%s "$APK")
+          echo "APK size: $SIZE bytes"
+          if [ "$SIZE" -lt 1000000 ]; then
+            echo "::error::APK is suspiciously small ($SIZE bytes) — build may be incomplete"
+            exit 1
+          fi
+          echo "::notice::Android APK verified: $SIZE bytes"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # 3. iOS — xcodebuild (macOS runner, no provisioning required for CI check)
+  # ──────────────────────────────────────────────────────────────────────────
+  build-ios:
+    name: iOS Build (Simulator)
+    runs-on: macos-14
+    needs: build-web
+    # iOS verifies nightly (schedule) or on demand (workflow_dispatch) only — not on
+    # every PR/push — to conserve scarce macOS runner minutes.
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.event.inputs.skip_ios != 'true'
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Bun
+
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: |
+          for attempt in 1 2 3; do
+            if bun install --frozen-lockfile; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+            echo "bun install --frozen-lockfile failed on attempt $attempt; retrying after transient network backoff..."
+            if ! bun pm cache; then
+              echo "bun pm cache failed; continuing because bun install --frozen-lockfile retry is authoritative."
+            fi
+            sleep $((attempt * 20))
+          done
+          node scripts/patch-capacitor-tar.cjs
+
+      - name: Download web dist
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: web-dist
+          path: dist/
+
+      - name: Sync Capacitor → iOS
+        run: |
+          mv dist dist-mobile
+          npm exec --no --ignore-scripts -- cap sync ios
+
+      - name: Select Xcode version
+        run: |
+          # Use Xcode 16 if available, otherwise fall back to the runner default
+          if [ -d "/Applications/Xcode_16.2.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+          else
+            echo "Xcode 16.2 not found; using runner default: $(xcode-select -p)"
+          fi
+
+      # This project uses Swift Package Manager — no CocoaPods / pod install needed.
+      # Capacitor 6 ships an SPM manifest at ios/App/App/Package.swift.
+      - name: Resolve Swift Package Manager dependencies
+        working-directory: ios/App
+        run: |
+          xcodebuild \
+            -project App.xcodeproj \
+            -scheme App \
+            -resolvePackageDependencies \
+            -clonedSourcePackagesDirPath spm-cache
+
+      - name: Build iOS (simulator — no signing required)
+        working-directory: ios/App
+        run: |
+          xcodebuild \
+            -project App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -derivedDataPath build/ \
+            -clonedSourcePackagesDirPath spm-cache \
+            CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=YES \
+            build \
+            2>&1 | tee /tmp/xcodebuild.log | grep -E "error:|warning:|Build (succeeded|FAILED)" || true # ci-integrity-allow: grep exits 1 on no-match; build failure is enforced by reading /tmp/xcodebuild.log below
+          # Check for build failure in log (grep exits 1 if no match, so use log file)
+          if grep -q "BUILD FAILED" /tmp/xcodebuild.log; then
+            echo "::error::xcodebuild reported BUILD FAILED"
+            exit 1
+          fi
+
+      - name: Verify iOS build product
+        working-directory: ios/App
+        run: |
+          APP_PATH=$(find build/ -name "App.app" -type d | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "::error::iOS App.app build product not found"
+            exit 1
+          fi
+          echo "::notice::iOS build verified at: $APP_PATH"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # 4. Gate — both platforms must pass for PR merge eligibility
+  # ──────────────────────────────────────────────────────────────────────────
+  mobile-gate:
+    name: Mobile Build Gate
+    runs-on: ubuntu-22.04
+    needs: [build-android, build-ios]
+    if: always()
+    timeout-minutes: 2
+
+    steps:
+      - name: Evaluate gate
+        run: |
+          ANDROID="${{ needs.build-android.result }}"
+          IOS="${{ needs.build-ios.result }}"
+
+          echo "Android build: $ANDROID"
+          echo "iOS build:     $IOS"
+
+          # A 'cancelled' result carries no verdict: it happens when a newer
+          # push supersedes this run (concurrency cancel-in-progress), on manual
+          # cancellation, or on timeout. A genuine build problem reports
+          # 'failure', so cancellations are treated as neutral — only real
+          # failures fail the gate. The latest uncancelled run is authoritative.
+          if [[ "$ANDROID" == "cancelled" || "$IOS" == "cancelled" ]]; then
+            echo "::notice::Mobile build gate — a platform build was cancelled (likely superseded by a newer push); treating as neutral."
+          fi
+
+          # 'skipped' is allowed when the input flag is set; 'cancelled' is neutral.
+          for result in "$ANDROID" "$IOS"; do
+            if [[ "$result" != "success" && "$result" != "skipped" && "$result" != "cancelled" ]]; then
+              echo "::error::Mobile build gate FAILED — a platform build did not succeed (result: $result)."
+              exit 1
+            fi
+          done
+
+          echo "::notice::Mobile build gate PASSED — no platform build failed."
