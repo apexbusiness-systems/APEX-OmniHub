@@ -1763,3 +1763,12 @@ modules (`workflows/saga_context.py`, `workflows/agent_saga_support.py`,
 - **File Updated:** `.github/workflows/arise.yml`
 - **Root Cause Fix:** Replaced 3-way `git merge` between `automation/arise-snapshot-current` and `origin/main` with `git checkout -B "$branch" "origin/${{ github.ref_name }}"`.
 - **Operational Justification:** Resetting the rolling snapshot branch directly to the target reference (`main`) ensures the snapshot branch inherits 100% of current source code with ZERO code merge conflicts (`src/lib/storage/providers/s3.ts`). Generated snapshot reports are applied cleanly on top and force-pushed to the rolling PR.
+## 9.40 Setup Android GitHub Action Version Upgrades
+
+**Changed files:** `.github/workflows/mobile-build-verify.yml`
+
+- **Root cause/Scope:** The `android-actions/setup-android@00854ea68c109d98c75d956347303bf7c45b0277` (v3.2.1) action was failing to install the `tools` package and failing the CI with `The process '/usr/local/lib/android/sdk/cmdline-tools/11.0/bin/sdkmanager' failed with exit code 1`.
+- **Remediation:**
+  - Upgraded the `android-actions/setup-android` action to `v3` and added the `packages: 'cmdline-tools;latest'` input.
+  - Upgraded the node, java, and checkout actions to avoid node 20 deprecation warnings.
+- **Operational impact:** Fixes the CI pipeline and allows the mobile build verification to succeed.
