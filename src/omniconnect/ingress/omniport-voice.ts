@@ -86,11 +86,30 @@ const DEFAULT_CONFIG: VoiceCommandConfig = {
 class VoiceCommandHandler {
   private static instance: VoiceCommandHandler | null = null;
   private config: VoiceCommandConfig;
+  private wakeWordRegexes: RegExp[] = [];
+  private wakeWordMatchRegex: RegExp | null = null;
   private readonly logger = createDebugLogger('OmniPort.Voice');
   private readonly sessions: Map<string, VoiceSession> = new Map();
 
   private constructor(config: Partial<VoiceCommandConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
+    this.compileWakeWords();
+  }
+
+  // ⚡ Bolt: Escape regex special characters in user-provided wake words to prevent runtime RegExp evaluation errors
+  private escapeRegex(string: string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // ⚡ Bolt: Pre-compile regular expressions on initialization to prevent O(N * M) reallocation overhead inside high-frequency processing methods.
+  private compileWakeWords(): void {
+    if (this.config.wakeWords && this.config.wakeWords.length > 0) {
+      this.wakeWordRegexes = this.config.wakeWords.map(word => new RegExp(String.raw`^${this.escapeRegex(word)}[,.]?\s*`, 'i'));
+      this.wakeWordMatchRegex = new RegExp(this.config.wakeWords.map(w => this.escapeRegex(w)).join('|'), 'i');
+    } else {
+      this.wakeWordRegexes = [];
+      this.wakeWordMatchRegex = null;
+    }
   }
 
   public static getInstance(config?: Partial<VoiceCommandConfig>): VoiceCommandHandler {
@@ -220,6 +239,7 @@ class VoiceCommandHandler {
    */
   public configure(config: Partial<VoiceCommandConfig>): void {
     this.config = { ...this.config, ...config };
+    this.compileWakeWords();
   }
 
   /**
@@ -308,18 +328,15 @@ class VoiceCommandHandler {
   // ===========================================================================
 
   private checkWakeWords(transcript: string): boolean {
-    const lowerTranscript = transcript.toLowerCase();
-    return this.config.wakeWords!.some((word) => lowerTranscript.includes(word.toLowerCase()));
+    if (!this.wakeWordMatchRegex) return false;
+    return this.wakeWordMatchRegex.test(transcript);
   }
 
   private normalizeTranscript(transcript: string): string {
     // Remove wake words from the beginning
     let normalized = transcript;
-    if (this.config.wakeWords) {
-      for (const word of this.config.wakeWords) {
-        const regex = new RegExp(String.raw`^${word}[,.]?\s*`, 'i');
-        normalized = normalized.replace(regex, '');
-      }
+    for (const regex of this.wakeWordRegexes) {
+      normalized = normalized.replace(regex, '');
     }
     return normalized.trim();
   }
