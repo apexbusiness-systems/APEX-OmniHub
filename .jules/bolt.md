@@ -36,9 +36,3 @@ status: verified
 **Learning:** In the `deduplicateEntries` function, the initial string tokenization (`new Set(text.split(...))`) inside an O(N²) comparison loop via `unique.some()` caused N*M redundant array iterations and garbage collection allocations per loop for both the target and the comparison items. Furthermore, `new Set([...wordsA, ...wordsB])` created unnecessary intermediate array and Set allocations for the Jaccard union.
 **Action:** Extract tokenization into a cached array mapping (`uniqueSets`) and reuse them iteratively. Use `union = wordsA.size + wordsB.size - intersection` instead of the spread syntax to bypass object allocations and execute purely mathematically.
 ## 2026-07-11 - Replaced O(N) Array Searches with O(1) Sets in Validation\n**Learning:** Checking against Enum values using `Object.values(Enum).includes(...)` inside high-frequency validation functions like `validateCanonicalEvent` causes continuous array allocations and O(N) lookups.\n**Action:** Always pre-calculate a `new Set(Object.values(Enum))` outside the function scope and use `.has()` for O(1) validation.
-## 2023-10-19 - Concurrent execution for S3 batch operations
-**Learning:** Sequential async operations in loops () create significant N+1 network request bottlenecks in storage providers.
-**Action:** Use  mapping to parallelize async operations in batch functions like  to significantly reduce latency.
-## 2023-10-19 - Concurrent execution for S3 batch operations
-**Learning:** Sequential async operations in loops (for...of await) create significant N+1 network request bottlenecks in storage providers.
-**Action:** Use Promise.all mapping to parallelize async operations in batch functions like createSignedUrls to significantly reduce latency.
