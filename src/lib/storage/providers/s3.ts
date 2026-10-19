@@ -358,9 +358,17 @@ export class S3Storage implements IStorage {
     options?: SignedUrlOptions
   ): Promise<StorageResult<string[]>> {
     try {
+      // ⚡ Bolt: Execute event delivery concurrently via Promise.all
+      // Replaced sequential for...of await with mapped Promise execution to resolve N+1 blocking
+      // resulting in significantly faster batch processing of delivery events.
+      const results = await Promise.all(
+        paths.map((p) => this.createSignedUrl(bucket, p, options))
+      )
+
       const out: string[] = []
-      for (const p of paths) {
-        const res = await this.createSignedUrl(bucket, p, options)
+      for (let i = 0; i < results.length; i++) {
+        const res = results[i]
+        const p = paths[i]
         if (res.error || !res.data) return { data: null, error: res.error ?? new Error(`Failed url for ${p}`) }
         out.push(res.data)
       }
