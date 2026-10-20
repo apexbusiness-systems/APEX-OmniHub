@@ -62,7 +62,7 @@ export const PaidAccessRoute = memo(({
   // Redirect unauthenticated users
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate(authRedirect);
+      void navigate(authRedirect);
     }
   }, [user, authLoading, navigate, authRedirect]);
 
@@ -163,13 +163,13 @@ const UpgradePrompt = memo(({ currentTier, requiredTier }: UpgradePromptProps) =
           </div>
 
           <div className="space-y-3">
-            <Button className="w-full" size="lg" onClick={() => navigate('/pricing')}>
+            <Button className="w-full" size="lg" onClick={() => void navigate('/pricing')}>
               Upgrade to {tierNames[requiredTier]}
             </Button>
             <Button
               variant="ghost"
               className="w-full"
-              onClick={() => navigate('/')}
+              onClick={() => void navigate('/')}
             >
               Back to Home
             </Button>
