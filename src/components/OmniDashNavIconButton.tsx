@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { LucideIcon } from 'lucide-react';
 
@@ -15,7 +16,7 @@ interface OmniDashNavIconButtonProps {
  * SPA-native: fires `onClick` to open a Sheet panel.
  * No routing. No URL changes. Accessible + keyboard-shortcut-aware.
  */
-export const OmniDashNavIconButton = ({
+export const OmniDashNavIconButton = memo(({
   onClick,
   label,
   icon: Icon,
@@ -57,4 +58,4 @@ export const OmniDashNavIconButton = ({
       </TooltipContent>
     </Tooltip>
   );
-};
+});
