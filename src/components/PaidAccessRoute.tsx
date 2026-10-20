@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePaidAccess, SubscriptionTier } from '@/hooks/usePaidAccess';
@@ -45,7 +45,7 @@ const tierNames: Record<SubscriptionTier, string> = {
  * </PaidAccessRoute>
  * ```
  */
-export const PaidAccessRoute = ({
+export const PaidAccessRoute = memo(({
   children,
   requiredTier = 'starter',
   authRedirect = '/auth',
@@ -92,7 +92,7 @@ export const PaidAccessRoute = ({
 
   // Default upgrade prompt
   return <UpgradePrompt currentTier={tier} requiredTier={requiredTier} />;
-};
+});
 
 interface UpgradePromptProps {
   readonly currentTier: SubscriptionTier;
@@ -124,7 +124,7 @@ const features = {
   ],
 };
 
-const UpgradePrompt = ({ currentTier, requiredTier }: UpgradePromptProps) => {
+const UpgradePrompt = memo(({ currentTier, requiredTier }: UpgradePromptProps) => {
   const navigate = useNavigate();
 
   const tierFeatures = features[requiredTier as keyof typeof features] || features.starter;
@@ -182,6 +182,6 @@ const UpgradePrompt = ({ currentTier, requiredTier }: UpgradePromptProps) => {
       </Card>
     </div>
   );
-};
+});
 
 export default PaidAccessRoute;
