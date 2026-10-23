@@ -1763,3 +1763,7 @@ modules (`workflows/saga_context.py`, `workflows/agent_saga_support.py`,
 - **File Updated:** `.github/workflows/arise.yml`
 - **Root Cause Fix:** Replaced 3-way `git merge` between `automation/arise-snapshot-current` and `origin/main` with `git checkout -B "$branch" "origin/${{ github.ref_name }}"`.
 - **Operational Justification:** Resetting the rolling snapshot branch directly to the target reference (`main`) ensures the snapshot branch inherits 100% of current source code with ZERO code merge conflicts (`src/lib/storage/providers/s3.ts`). Generated snapshot reports are applied cleanly on top and force-pushed to the rolling PR.
+
+## 2026-10-23: CI Environment Changes
+GitHub Actions runners are deprecating Node.js 20. Updated all .github/workflows to use v4 for checkout, setup-node, and setup-java to avoid forced deprecation warnings and ensure workflow stability.
+Updated android-actions/setup-android to v3 with a package spec of 'cmdline-tools;latest' to bypass a broken missing 'tools' package reference in the latest Android SDK.

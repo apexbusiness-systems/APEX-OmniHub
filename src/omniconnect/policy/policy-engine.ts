@@ -14,6 +14,7 @@ import { SchemaValidator } from './schema-validator';
 export class PolicyEngine {
   private readonly profiles = new Map<string, AppFilterProfile>();
   private readonly schemaValidator = new SchemaValidator();
+  private readonly regexCache = new WeakMap<AppFilterProfile, { allow: RegExp; deny: RegExp | null }>();
 
   async filter(
     events: CanonicalEvent[],
@@ -104,15 +105,23 @@ export class PolicyEngine {
     if (!profile.allowedEventTypes.includes(event.eventType)) return false;
 
     const { allow, deny } = profile.contentCategories;
-    const body = JSON.stringify({ p: event.payload, m: event.metadata }).toLowerCase();
-    const hasMatch = (list: string[]) => list.some(c => body.includes(c.toLowerCase()));
-
-    if (deny.length > 0 && hasMatch(deny)) return false;
     
     // Fail closed: if allow list is empty, we do not allow any payload that hasn't been explicitly allowed
     if (allow.length === 0) return false;
-    
-    return hasMatch(allow);
+
+    let cached = this.regexCache.get(profile);
+    if (!cached) {
+      cached = {
+        allow: new RegExp(allow.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'i'),
+        deny: deny.length > 0 ? new RegExp(deny.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'i') : null
+      };
+      this.regexCache.set(profile, cached);
+    }
+
+    const body = JSON.stringify({ p: event.payload, m: event.metadata });
+
+    if (cached.deny && cached.deny.test(body)) return false;
+    return cached.allow.test(body);
   }
 
   // ⚡ Bolt: Define regex outside function scope so we only compile once

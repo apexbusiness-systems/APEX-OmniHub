@@ -88,9 +88,12 @@ class VoiceCommandHandler {
   private config: VoiceCommandConfig;
   private readonly logger = createDebugLogger('OmniPort.Voice');
   private readonly sessions: Map<string, VoiceSession> = new Map();
+  private wakeWordsAnyRegex: RegExp | null = null;
+  private wakeWordsStartRegex: RegExp | null = null;
 
   private constructor(config: Partial<VoiceCommandConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
+    this.compileWakeWordRegexes();
   }
 
   public static getInstance(config?: Partial<VoiceCommandConfig>): VoiceCommandHandler {
@@ -220,6 +223,7 @@ class VoiceCommandHandler {
    */
   public configure(config: Partial<VoiceCommandConfig>): void {
     this.config = { ...this.config, ...config };
+    this.compileWakeWordRegexes();
   }
 
   /**
@@ -307,19 +311,27 @@ class VoiceCommandHandler {
   // INTERNAL HELPERS
   // ===========================================================================
 
+  private compileWakeWordRegexes(): void {
+    if (this.config.wakeWords && this.config.wakeWords.length > 0) {
+      const escaped = this.config.wakeWords.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      this.wakeWordsAnyRegex = new RegExp(escaped.join('|'), 'i');
+      this.wakeWordsStartRegex = new RegExp(`^(${escaped.join('|')})[,.]?\\s*`, 'i');
+    } else {
+      this.wakeWordsAnyRegex = null;
+      this.wakeWordsStartRegex = null;
+    }
+  }
+
   private checkWakeWords(transcript: string): boolean {
-    const lowerTranscript = transcript.toLowerCase();
-    return this.config.wakeWords!.some((word) => lowerTranscript.includes(word.toLowerCase()));
+    if (!this.wakeWordsAnyRegex) return false;
+    return this.wakeWordsAnyRegex.test(transcript);
   }
 
   private normalizeTranscript(transcript: string): string {
     // Remove wake words from the beginning
     let normalized = transcript;
-    if (this.config.wakeWords) {
-      for (const word of this.config.wakeWords) {
-        const regex = new RegExp(String.raw`^${word}[,.]?\s*`, 'i');
-        normalized = normalized.replace(regex, '');
-      }
+    if (this.wakeWordsStartRegex) {
+      normalized = normalized.replace(this.wakeWordsStartRegex, '');
     }
     return normalized.trim();
   }
