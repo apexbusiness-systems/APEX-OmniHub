@@ -39,3 +39,4 @@ status: verified
 ## YYYY-MM-DD - Precompile RegExp outside of loops for array matching
 **Learning:** When doing `.some(word => str.includes(word))` or creating a `new RegExp` inside a loop, it results in massive O(N) penalties and repeated GC overhead.
 **Action:** Precompile an aggregated alternation Regex (e.g. `new RegExp(arr.map(escapeRegex).join('|'))`) in constructors or use a `WeakMap` cache to turn O(N) iterations into O(1) compiled evaluations.
+## YYYY-MM-DD - Update GitHub action scripts/ci/check-ops-doc-drift.mjs to avoid failing if actions/checkout is bumped from v3 to v4
