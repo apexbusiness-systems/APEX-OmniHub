@@ -14,7 +14,7 @@
  * chronological timeline (per actor + day) and labelled as such — we never
  * claim a linked agent chain that the data does not contain.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, memo } from 'react';
 import { supabase, hasSupabaseConfig } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
 import {
@@ -168,12 +168,7 @@ export function OmniTracePanel() {
                 </h4>
                 <ul className="fortress-list" style={{ marginTop: 'var(--space-2)' }}>
                   {chain.events.map((event) => (
-                    <li key={event.id} className="fortress-list__item">
-                      <span className="text-secondary" style={{ fontSize: '0.72rem' }}>
-                        {formatTime(event.created_at)}
-                      </span>
-                      <span style={{ marginLeft: 'var(--space-2)' }}>{describeEvent(event)}</span>
-                    </li>
+                    <TraceEventRow key={event.id} event={event} />
                   ))}
                 </ul>
               </section>
@@ -184,3 +179,16 @@ export function OmniTracePanel() {
     </div>
   );
 }
+
+// ⚡ Bolt: Extracted row into a memoized component.
+// This prevents React from re-rendering every item in the trace when parent states change.
+const TraceEventRow = memo(function TraceEventRow({ event }: { event: AuditLogRow }) {
+  return (
+    <li className="fortress-list__item">
+      <span className="text-secondary" style={{ fontSize: '0.72rem' }}>
+        {formatTime(event.created_at)}
+      </span>
+      <span style={{ marginLeft: 'var(--space-2)' }}>{describeEvent(event)}</span>
+    </li>
+  );
+});
