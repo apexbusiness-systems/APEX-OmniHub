@@ -30,7 +30,7 @@ litellm>=1.0.0
 # Database
 supabase>=2.3.0
 asyncpg>=0.29.0
-mysql-connector-python>=8.3.0
+mysql-connector-python>=26.10.0
 
 # Utilities
 aiofiles>=23.2.0
