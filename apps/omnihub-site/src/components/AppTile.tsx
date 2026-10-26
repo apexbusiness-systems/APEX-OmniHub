@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Download } from 'lucide-react';
 
 export interface AppData {
@@ -17,7 +18,7 @@ interface AppTileProps {
   readonly variant?: 'small' | 'large';
 }
 
-export const AppTile = ({
+export const AppTile = memo(({
   app,
   isInstallable,
   onInstall,
@@ -95,4 +96,4 @@ export const AppTile = ({
       )}
     </button>
   );
-};
+});
