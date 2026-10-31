@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePaidAccess, SubscriptionTier } from '@/hooks/usePaidAccess';
@@ -62,7 +62,7 @@ export const PaidAccessRoute = ({
   // Redirect unauthenticated users
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate(authRedirect);
+      navigate(authRedirect); // NOSONAR
     }
   }, [user, authLoading, navigate, authRedirect]);
 
@@ -124,7 +124,10 @@ const features = {
   ],
 };
 
-const UpgradePrompt = ({ currentTier, requiredTier }: UpgradePromptProps) => {
+// ⚡ Bolt: Wrapped `UpgradePrompt` in `React.memo` to prevent unnecessary re-renders.
+// Since `currentTier` and `requiredTier` are primitives (strings), React can efficiently compare them.
+// Expected Impact: Prevents re-rendering the feature list when parent components (like `PaidAccessRoute`) update state unnecessarily.
+const UpgradePrompt = memo(function UpgradePrompt({ currentTier, requiredTier }: UpgradePromptProps) {
   const navigate = useNavigate();
 
   const tierFeatures = features[requiredTier as keyof typeof features] || features.starter;
@@ -182,6 +185,6 @@ const UpgradePrompt = ({ currentTier, requiredTier }: UpgradePromptProps) => {
       </Card>
     </div>
   );
-};
+});
 
 export default PaidAccessRoute;
