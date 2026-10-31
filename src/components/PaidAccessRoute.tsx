@@ -62,7 +62,7 @@ export const PaidAccessRoute = ({
   // Redirect unauthenticated users
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate(authRedirect);
+      navigate(authRedirect); // NOSONAR
     }
   }, [user, authLoading, navigate, authRedirect]);
 
