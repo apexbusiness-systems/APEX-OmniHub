@@ -1763,3 +1763,9 @@ modules (`workflows/saga_context.py`, `workflows/agent_saga_support.py`,
 - **File Updated:** `.github/workflows/arise.yml`
 - **Root Cause Fix:** Replaced 3-way `git merge` between `automation/arise-snapshot-current` and `origin/main` with `git checkout -B "$branch" "origin/${{ github.ref_name }}"`.
 - **Operational Justification:** Resetting the rolling snapshot branch directly to the target reference (`main`) ensures the snapshot branch inherits 100% of current source code with ZERO code merge conflicts (`src/lib/storage/providers/s3.ts`). Generated snapshot reports are applied cleanly on top and force-pushed to the rolling PR.
+
+## 9.22 Fix Mobile Build Verification (setup-android version bump)
+
+- **Root cause:** The `android-actions/setup-android` v3 action deprecated the old Node.js version in CI, and failed on a package fetch when attempting to provision tools.
+- **Fix:** Bumped `android-actions/setup-android` to `v4.0.4` (`be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd`) in `.github/workflows/mobile-build-verify.yml` to support modern Node.js versions and fix the failed fetch.
+- **Operational impact:** This only affects CI. No deployed services, env vars, database tables, or migrations were modified.
