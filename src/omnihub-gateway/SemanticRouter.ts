@@ -203,13 +203,15 @@ function scoreSkill(
   }
 
   // Description matching (1 point per keyword)
-  const descWords = new Set(skill.description.toLowerCase().split(/\s+/));
-  score += keywords.filter((kw) => descWords.has(kw)).length;
+  // ⚡ Bolt: Use .includes() on the array instead of allocating a Set inside the loop. keywords is small.
+  const descWords = skill.description.toLowerCase().split(/\s+/);
+  score += keywords.filter((kw) => descWords.includes(kw)).length;
 
   // Example matching (2 points per example with keyword overlap)
   for (const example of skill.examples) {
-    const exampleWords = new Set(example.toLowerCase().split(/\s+/));
-    if (keywords.some((kw) => exampleWords.has(kw))) {
+    // ⚡ Bolt: Avoid allocating a Set here. We already have keywordSet for O(1) checks.
+    const exampleWords = example.toLowerCase().split(/\s+/);
+    if (exampleWords.some((w) => keywordSet.has(w))) {
       score += 2;
     }
   }
@@ -231,8 +233,9 @@ function scoreAgent(agent: RegisteredAgent, keywords: string[], keywordSet: Set<
   }
 
   // Agent-level description matching (0.5 points per keyword)
-  const agentDescWords = new Set(agent.card.description.toLowerCase().split(/\s+/));
-  score += keywords.filter((kw) => agentDescWords.has(kw)).length * 0.5;
+  // ⚡ Bolt: Use .includes() on the array instead of allocating a Set inside the loop. keywords is small.
+  const agentDescWords = agent.card.description.toLowerCase().split(/\s+/);
+  score += keywords.filter((kw) => agentDescWords.includes(kw)).length * 0.5;
 
   const reasonParts: string[] = [];
   if (matchedTags.length > 0) reasonParts.push(`tags=[${matchedTags.join(',')}]`);
