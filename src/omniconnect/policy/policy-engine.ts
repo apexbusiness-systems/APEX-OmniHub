@@ -14,6 +14,17 @@ import { SchemaValidator } from './schema-validator';
 export class PolicyEngine {
   private readonly profiles = new Map<string, AppFilterProfile>();
   private readonly schemaValidator = new SchemaValidator();
+  private readonly regexCache = new WeakMap<string[], RegExp>();
+
+  private getCachedRegex(list: string[]): RegExp {
+    let regex = this.regexCache.get(list);
+    if (!regex) {
+      const escapedList = list.map(item => item.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      regex = new RegExp(escapedList.join('|'), 'i');
+      this.regexCache.set(list, regex);
+    }
+    return regex;
+  }
 
   async filter(
     events: CanonicalEvent[],
@@ -104,8 +115,13 @@ export class PolicyEngine {
     if (!profile.allowedEventTypes.includes(event.eventType)) return false;
 
     const { allow, deny } = profile.contentCategories;
-    const body = JSON.stringify({ p: event.payload, m: event.metadata }).toLowerCase();
-    const hasMatch = (list: string[]) => list.some(c => body.includes(c.toLowerCase()));
+    const body = JSON.stringify({ p: event.payload, m: event.metadata });
+
+    // ⚡ Bolt: Replaced O(N*M) array.some(includes) with a single-pass RegExp test
+    const hasMatch = (list: string[]) => {
+      if (list.length === 0) return false;
+      return this.getCachedRegex(list).test(body);
+    };
 
     if (deny.length > 0 && hasMatch(deny)) return false;
     
