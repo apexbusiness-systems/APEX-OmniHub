@@ -95,7 +95,7 @@ jobs:
       - name: Install osv-scanner
         run: |
           set -euo pipefail
-          OSV_VERSION="1.9.2"
+          OSV_VERSION="2.7.0"
           curl --proto =https -fSL -o /tmp/osv-scanner \
             "https://github.com/google/osv-scanner/releases/download/v${OSV_VERSION}/osv-scanner_linux_amd64"
           chmod +x /tmp/osv-scanner
